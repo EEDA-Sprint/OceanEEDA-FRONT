@@ -1,14 +1,14 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Map } from "react-kakao-maps-sdk";
 import styled from "styled-components";
-import KakaoMarker from "./KaKaoMarker";
+import Marker1 from "./Marker1";
+import Marker2 from "./Marker2";
 
-function KaKaoMap() {
-    const [location, setLocation] = useState({ lat: 37.5665, lng: 126.9780 });
-    const [error, setError] = useState<string | null>(null);
+function KaKaoMap({ data, setSelectedCard, setActiveOption }: { data: any, setSelectedCard: any, setActiveOption: any }) {
     const mapRef = useRef<kakao.maps.Map | null>(null);
+    const [location, setLocation] = useState({ lat: 37.5665, lng: 126.9780 });
 
     useEffect(() => {
         if (typeof window !== "undefined" && navigator.geolocation) {
@@ -18,20 +18,27 @@ function KaKaoMap() {
                     setLocation({ lat: latitude, lng: longitude });
                 },
                 (err) => {
-                    setError(err.message);
-                }
+                    console.log(err.message);
+                },
+                { enableHighAccuracy: true, maximumAge: 0 }
             );
+
         } else {
-            setError("Geolocation is not supported by your browser.");
+            console.log("Geolocation is not supported by your browser.");
         }
     }, []);
 
-    const handlePanTo = (lat: number, lng: number) => {
+
+    const handlePanTo = (data: any) => {
         if (mapRef.current) {
-            const moveLatLng = new kakao.maps.LatLng(lat, lng);
-            mapRef.current.panTo(moveLatLng);
+            setActiveOption(1);
+            setSelectedCard(data);
+
+            const moveLatLng = new kakao.maps.LatLng(data.location.lat, data.location.lng);
+            mapRef.current.panTo(moveLatLng, 32);
         }
     };
+
 
     return (
         <Container>
@@ -41,7 +48,15 @@ function KaKaoMap() {
                 level={3}
                 onCreate={(map) => (mapRef.current = map)}
             >
-                <KakaoMarker location={location} />
+                {
+                    data.map((item: any, index: number) => (
+                        <Marker1
+                            key={index}
+                            location={item.location}
+                            onClick={() => handlePanTo(item)}
+                        />
+                    ))
+                }
             </Map>
         </Container>
     );

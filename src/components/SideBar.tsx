@@ -3,22 +3,21 @@
 import styled from "styled-components";
 import { useEffect, useState } from "react";
 import { MapIcon, StarIcon, SliderIcon } from "./Icons";
+import { FaAngleLeft } from "react-icons/fa6";
 import SearchBar from "./SearchBar";
-import Card from "./Card";
+import CardList1 from "./CardList1";
+import CardList2 from "./CardList2";
+import CardList3 from "./CardList3";
+import Detail from "./Detail";
+import SlideShow from "./Slide";
 
-export default function SideBar() {
-    const [activeOption, setActiveOption] = useState<number | null>(null);
-    const [selectedCard, setSelectedCard] = useState<any | null>(null);
-    const cardData = Array(10).fill({
-        region: "지역명",
-        type: "쓰레기 종류",
-        name: "이름",
-        description: "누가 요즘 설명을 한 줄만 적습니까 두 줄까지는 안 자르고 세 줄부터 잘리게 ㅋㅋ",
-    });
+export default function SideBar({ data, selectedCard, setSelectedCard, activeOption, setActiveOption }: 
+    {data:any, selectedCard:any, setSelectedCard:any, activeOption:any, setActiveOption:any}) { 
 
     const handleItemClick = (index: number) => {
         if (activeOption === index) {
             setActiveOption(null);
+            setSelectedCard(null);
         } else {
             setActiveOption(index);
         }
@@ -57,36 +56,25 @@ export default function SideBar() {
                     <DetailHeader>
                         <SearchBar />
                     </DetailHeader>
+                    {selectedCard &&
+                        <SlideShow selectedCard={selectedCard} setSelectedCard={setSelectedCard} />
+                    }
                     {activeOption === 3 ?
                         <div></div>
                         :
                         <CardList>
                             {selectedCard ? (
-                                <DetailView>
-                                    <h2>{selectedCard.region}</h2>
-                                    <p>{selectedCard.type}</p>
-                                    <p>{selectedCard.name}</p>
-                                    <p>{selectedCard.description}</p>
-                                    <BackButton onClick={() => setSelectedCard(null)}>뒤로 가기</BackButton>
-                                </DetailView>
+                                <Detail selectedCard={selectedCard} />
                             ) : (
-                                <CardList>
-                                    {cardData.map((data, index) => (
-                                        <Card
-                                            key={index}
-                                            region={data.region}
-                                            type={data.type}
-                                            name={data.name}
-                                            description={data.description}
-                                            onClick={() => setSelectedCard(data)}
-                                        />
-                                    ))}
-                                </CardList>
-                            )}
-
-                        </CardList>
+                                <>
+                                {activeOption === 0 && <CardList1 cardData={data} setSelectedCard={setSelectedCard} />}
+                                {activeOption === 1 && <CardList2 cardData={data} setSelectedCard={setSelectedCard} />}
+                                {activeOption === 2 && <CardList3 cardData={data} setSelectedCard={setSelectedCard} />}
+                                </>
+                            )
+                        }</CardList>
                     }
-
+                    로그인
                 </DetailContainer>
             )}
         </>
@@ -109,7 +97,7 @@ const SidebarContainer = styled.div`
 
 const DetailContainer = styled.div`
     width: 400px;
-    height: 100%;
+    height: 103%;
     position: fixed;
     top: 0;
     left: 100px;
@@ -117,6 +105,7 @@ const DetailContainer = styled.div`
     color: white;
     display: flex;
     flex-direction: column;
+    margin-bottom: 0px;
     z-index: 1000;
 `;
 
@@ -185,24 +174,4 @@ const CardList = styled.div`
     overflow-y: auto;
     flex-grow: 1;
     cursor: pointer;
-`;
-
-const DetailView = styled.div`
-    padding: 20px;
-    background-color: #ffffff;
-    flex-grow: 1;
-`;
-
-const BackButton = styled.button`
-    margin-top: 20px;
-    padding: 10px 20px;
-    background-color: #008e88;
-    color: white;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-
-    &:hover {
-        background-color: #007a74;
-    }
 `;
