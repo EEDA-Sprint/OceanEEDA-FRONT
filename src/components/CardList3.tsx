@@ -12,11 +12,13 @@ export default function CardList3({ cardData, setSelectedCard }: {
     cardData: CardItem[];
     setSelectedCard: (card: CardItem) => void;
 }) {
+    
     return (
         <>
             <Title>승인 대기 중인 게시물 / 작품</Title>
             <CardList>
-                {cardData.map((data: CardItem, index: number) => (
+                {cardData.map((data: any, index: number) => (
+                    !data.isApproved &&
                     <Card
                         key={index}
                         data={data}

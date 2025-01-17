@@ -3,7 +3,6 @@
 import styled from "styled-components";
 import { useEffect, useState } from "react";
 import { MapIcon, StarIcon, SliderIcon } from "./Icons";
-import { FaAngleLeft } from "react-icons/fa6";
 import SearchBar from "./SearchBar";
 import CardList1 from "./CardList1";
 import CardList2 from "./CardList2";
@@ -11,17 +10,48 @@ import CardList3 from "./CardList3";
 import Detail from "./Detail";
 import SlideShow from "./Slide";
 
-export default function SideBar({ data, selectedCard, setSelectedCard, activeOption, setActiveOption }: 
-    {data:any, selectedCard:any, setSelectedCard:any, activeOption:any, setActiveOption:any}) { 
+interface SideBarProps {
+    data: any;
+    selectedCard: any;
+    setSelectedCard: (card: any) => void;
+    activeOption: any;
+    setActiveOption: (option: any) => void;
+    openPopup: (type: number) => void;
+    setIsMarkerMode: (isMarkerMode: boolean) => void;
+    isLoggedIn: any;
+    setIsLoggedIn: any;
+    setMarkings: any;
+}
 
+export default function SideBar({
+    data,
+    selectedCard,
+    setSelectedCard,
+    activeOption,
+    setActiveOption,
+    openPopup,
+    setIsMarkerMode,
+    isLoggedIn,
+    setIsLoggedIn,
+    setMarkings
+}: SideBarProps) {
     const handleItemClick = (index: number) => {
         if (activeOption === index) {
             setActiveOption(null);
             setSelectedCard(null);
         } else {
             setActiveOption(index);
+            setSelectedCard(null);
         }
     };
+
+    const Logout = () => {
+        if (isLoggedIn) {
+          localStorage.removeItem('accessToken');
+          localStorage.removeItem('refreshToken');
+          setIsLoggedIn(false);
+        }
+      };
 
     return (
         <>
@@ -50,6 +80,11 @@ export default function SideBar({ data, selectedCard, setSelectedCard, activeOpt
                         <Text>관리</Text>
                     </SidebarItem>
                 </SidebarMenu>
+                {
+                    isLoggedIn ?
+                        <LoginButton onClick={Logout}>로그아웃</LoginButton> :
+                        <LoginButton onClick={() => openPopup(1)}>로그인</LoginButton>
+                }
             </SidebarContainer>
             {activeOption !== null && (
                 <DetailContainer>
@@ -67,14 +102,13 @@ export default function SideBar({ data, selectedCard, setSelectedCard, activeOpt
                                 <Detail selectedCard={selectedCard} />
                             ) : (
                                 <>
-                                {activeOption === 0 && <CardList1 cardData={data} setSelectedCard={setSelectedCard} />}
-                                {activeOption === 1 && <CardList2 cardData={data} setSelectedCard={setSelectedCard} />}
-                                {activeOption === 2 && <CardList3 cardData={data} setSelectedCard={setSelectedCard} />}
+                                    {activeOption === 0 && <CardList1 cardData={data} setSelectedCard={setSelectedCard} setIsMarkerMode={setIsMarkerMode} isLoggedIn={isLoggedIn}/>}
+                                    {activeOption === 1 && <CardList2 cardData={data} setSelectedCard={setSelectedCard} setIsMarkerMode={setIsMarkerMode} isLoggedIn={isLoggedIn}/>}
+                                    {activeOption === 2 && <CardList3 cardData={data} setSelectedCard={setSelectedCard} />}
                                 </>
                             )
-                        }</CardList>
+                            }</CardList>
                     }
-                    로그인
                 </DetailContainer>
             )}
         </>
@@ -91,13 +125,13 @@ const SidebarContainer = styled.div`
     color: white;
     display: flex;
     flex-direction: column;
-    z-index: 1000;
+    z-index: 99;
     border-right: 1px solid rgba(0, 142, 136, 0.4);
 `;
 
 const DetailContainer = styled.div`
     width: 400px;
-    height: 103%;
+    height: 100%;
     position: fixed;
     top: 0;
     left: 100px;
@@ -106,7 +140,7 @@ const DetailContainer = styled.div`
     display: flex;
     flex-direction: column;
     margin-bottom: 0px;
-    z-index: 1000;
+    z-index: 99;
 `;
 
 const SidebarHeader = styled.div`
@@ -174,4 +208,18 @@ const CardList = styled.div`
     overflow-y: auto;
     flex-grow: 1;
     cursor: pointer;
+`;
+
+const LoginButton = styled.button`
+    position: absolute;
+    width: 98px;
+    height: 80px;
+    background-color: none;
+    bottom: 5px;
+    color: black;
+    border: none;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    z-index: 99;
 `;

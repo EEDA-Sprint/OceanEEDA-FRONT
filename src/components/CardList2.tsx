@@ -1,23 +1,51 @@
+import { useState } from "react";
 import styled from "styled-components";
 import Card from "./Card";
 import { GoPencil } from "react-icons/go";
+import Create from "./Create";
 
-interface CardItem {
-    region: string;
-    type: string;
-    name: string;
-    description: string;
-}
-
-export default function CardList2({ cardData, setSelectedCard }: {
-    cardData: CardItem[];
-    setSelectedCard: (card: CardItem) => void;
+export default function CardList2({ cardData, setSelectedCard, setIsMarkerMode, isLoggedIn }: {
+    cardData: any[];
+    setSelectedCard: (card: any) => void;
+    setIsMarkerMode: (mode: boolean) => void;
+    isLoggedIn: any;
 }) {
+    const [isActive, setIsActive] = useState(false);
+    const [showCreate, setShowCreate] = useState(false);
+    const [markerLocation, setMarkerLocation] = useState<{ lat: number, lng: number } | null>(null);
+
+    const handleWriteClick = () => {
+        setIsActive(!isActive);
+        setIsMarkerMode(!isActive);
+        if (!isActive) {
+            setShowCreate(true);
+        }
+    };
+
+    const handleClose = () => {
+        setShowCreate(false);
+        setIsActive(false);
+        setIsMarkerMode(false);
+        setMarkerLocation(null);
+    };
+
     return (
         <>
-            <Write><GoPencil /></Write>
+            {showCreate && (
+                <Create
+                    onClose={handleClose}
+                    markerLocation={markerLocation || undefined}
+                />
+            )}
+            {
+                isLoggedIn && 
+                <Write $isActive={isActive} onClick={handleWriteClick}>
+                    <GoPencil />
+                </Write>
+            }
             <CardList>
-                {cardData.map((data: CardItem, index: number) => (
+                {cardData.map((data: any, index: number) => (
+                    data.isApproved && data.category === 'ART' &&
                     <Card
                         key={index}
                         data={data}
@@ -27,8 +55,7 @@ export default function CardList2({ cardData, setSelectedCard }: {
                 ))}
             </CardList>
         </>
-
-    )
+    );
 }
 
 const CardList = styled.div`
@@ -40,7 +67,7 @@ const CardList = styled.div`
     cursor: pointer;
 `;
 
-const Write = styled.div`
+const Write = styled.div<{ $isActive: boolean }>`
     position: absolute;
     display: flex;
     align-items: center;
@@ -48,11 +75,13 @@ const Write = styled.div`
     font-weight: 600;
     font-size: 30px;
     right: 30px;
-    bottom: 40px;
+    bottom: 20px;
     width: 60px;
     height: 60px;
-    background-color: #008E88;
+    background-color: ${props => props.$isActive ? '#ff4444' : '#008E88'};
     border-radius: 100%;
     box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.2);
     z-index: 99;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
 `;

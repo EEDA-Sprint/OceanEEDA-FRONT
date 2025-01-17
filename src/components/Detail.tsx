@@ -4,17 +4,17 @@ export default function Detail({ selectedCard }: { selectedCard: any }) {
     return (
         <DetailView>
             <Tags>
-                <Tag>#{selectedCard.region}</Tag>
-                <Tag>#{selectedCard.type}</Tag>
+                <Tag>#{selectedCard.regionId}</Tag>
+                <Tag>#{selectedCard.trashTypes}</Tag>
             </Tags>
             
             <TitleWrapper>
                 <DetailTitle>{selectedCard.title}</DetailTitle>
-                <DetailSubtitle>조사자: {selectedCard.name}</DetailSubtitle>
+                <DetailSubtitle>조사자: {selectedCard.poster}</DetailSubtitle>
             </TitleWrapper>
             
             <DetailDescription>
-                {selectedCard.description}
+                {selectedCard.content}
             </DetailDescription>
         </DetailView>
     )

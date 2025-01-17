@@ -5,7 +5,7 @@ interface Location {
     lng: number;
 }
 
-export default function Marker2({ location }: { location: Location }) {
+export default function Marker2({ location, onClick }: {location: Location; onClick: () => void;}) {
     return (
         <MapMarker
             position={location}
@@ -22,6 +22,7 @@ export default function Marker2({ location }: { location: Location }) {
                     },
                 },
             }}
+            onClick={onClick}
         />
     )
 }

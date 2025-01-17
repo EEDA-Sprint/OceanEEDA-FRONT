@@ -1,6 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
 import styled from 'styled-components';
 import { AiOutlineMore } from "react-icons/ai";
+import { useMutation } from "@apollo/client";
+import { MarkingUpdate } from "../graphql/mutations";
 
 interface CardProps {
   data: any
@@ -11,6 +13,7 @@ interface CardProps {
 const Card: React.FC<CardProps> = ({ data, role, onClick }) => {
   const [toggle, setToggle] = useState(false);
   const popupRef = useRef<HTMLDivElement>(null);
+  const [updateMarking] = useMutation(MarkingUpdate);
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
@@ -25,17 +28,48 @@ const Card: React.FC<CardProps> = ({ data, role, onClick }) => {
     };
   }, []);
 
+  const handleAccept = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    try {
+      const token = localStorage.getItem('accessToken');
+      console.log(token);
+      if (!token) {
+        throw new Error("Authorization token not found");
+      }
+  
+      console.log(data.id);
+  
+      await updateMarking({
+        variables: {
+          id: data.id,
+          isApproved: true 
+        },
+        context: {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        }
+      });
+  
+      alert("수락되었습니다");
+      setToggle(false);
+    } catch (error) {
+      console.error('Error:', error);
+      alert("오류가 발생했습니다");
+    }
+  };
+
   return (
     <Container>
       <Body onClick={onClick}>
         <Avatar />
         <Box>
           <TagList>
-            <Tag>{data.region}</Tag>
-            <Tag>{data.type}</Tag>
+            <Tag>{data.regionId}</Tag>
+            <Tag>{data.trashTypes}</Tag>
           </TagList>
           <Name>{data.title}</Name>
-          <Description>{data.description}</Description>
+          <Description>{data.content}</Description>
         </Box>
         {role === "admin" &&
           <>
@@ -44,7 +78,7 @@ const Card: React.FC<CardProps> = ({ data, role, onClick }) => {
             </Menu>
             {toggle && (
               <Popup ref={popupRef}>
-                <PopupButton onClick={(e) => { e.stopPropagation(); alert("수정됨"); }}>수락하기</PopupButton>
+                <PopupButton onClick={handleAccept}>수락하기</PopupButton>
                 <PopupButton onClick={(e) => { e.stopPropagation(); alert("삭제됨"); }}>삭제하기</PopupButton>
               </Popup>
             )}
@@ -58,7 +92,7 @@ const Card: React.FC<CardProps> = ({ data, role, onClick }) => {
 const Container = styled.div`
   position: relative;
   width: 100%;
-  height: 300px;
+  height: 150px;
   padding: 16px;
   font-family: Arial, sans-serif;
   margin: 0 auto;
@@ -116,7 +150,9 @@ const Description = styled.p`
 `;
 
 const Menu = styled.button`
-  top: 50px;
+  position: absolute;
+  top: 10px;
+  right: 10px;
   cursor: pointer;
   color: #D9D9D9;
   font-size: 30px;
@@ -149,7 +185,7 @@ const PopupButton = styled.button`
   }
 `;
 
-const Box = styled.div `
+const Box = styled.div`
   margin-left: 100px;
 `
 
