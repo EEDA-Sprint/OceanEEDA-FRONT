@@ -5,11 +5,12 @@ import styled from 'styled-components';
 
 const SlideShow = ({ selectedCard, setSelectedCard }: { selectedCard: any, setSelectedCard: React.Dispatch<React.SetStateAction<any>> }) => {
     const settings = {
-        dots: true,          // 슬라이드 아래 점을 표시
-        infinite: true,      // 슬라이드가 끝나면 처음으로 돌아간다
-        speed: 500,          // 슬라이드 전환 속도 (ms)
-        slidesToShow: 1,     // 한번에 보여줄 슬라이드 개수
+        dots: false,
+        infinite: true,
+        speed: 500,
+        slidesToShow: 1,
         slidesToScroll: 1,
+        arrows: false,
     };
 
     return (
