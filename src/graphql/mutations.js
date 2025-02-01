@@ -18,27 +18,60 @@ export const SIGNUP = gql`
 `;
 
 export const MarkingAdd = gql`
-  mutation MarkingAdd(
+  mutation MyMutation(
+    $category: Category,
+    $content: String,
     $regionId: String!,
-    $category: Category!,
-    $content: String!,
-    $isApproved: Boolean!,
+    $title: String,
+    $trashTypes: [String!],
+    $poster: String,
     $latitude: Float!,
     $longitude: Float!,
-    $title: String!,
-    $trashTypes: [String!]!,
-    $poster: String!
+    $files: [FileInput!]!
   ) {
     createMarking(
       input: {
         regionId: $regionId,
         category: $category,
         content: $content,
-        isApproved: $isApproved,
-        location: {latitude: $latitude, longitude: $longitude},
-        title: $title,
         trashTypes: $trashTypes,
-        poster: $poster
+        title: $title,
+        poster: $poster,
+        location: { latitude: $latitude, longitude: $longitude },
+        files: $files,
+        isApproved: false
+      }
+    ) {
+      id
+    }
+  }
+`;
+
+export const MarkingUpdateWithDetails = gql`
+  mutation UpdateMarking(
+    $id: ID!,
+    $category: Category,
+    $content: String,
+    $files: [FileInput!],
+    $latitude: Float!,
+    $longitude: Float!,
+    $poster: String,
+    $regionId: String,
+    $title: String,
+    $trashTypes: [String!]
+  ) {
+    updateMarking(
+      id: $id,
+      input: {
+        category: $category,
+        content: $content,
+        files: $files,
+        isApproved: false,
+        location: { latitude: $latitude, longitude: $longitude },
+        poster: $poster,
+        regionId: $regionId,
+        title: $title,
+        trashTypes: $trashTypes
       }
     ) {
       id
@@ -51,6 +84,23 @@ export const MarkingUpdate = gql`
   mutation MyMutation($id: ID!, $isApproved: Boolean!) {
     updateMarking(id: $id, input: { isApproved: $isApproved }) {
       title
+    }
+  }
+`;
+
+export const Refresh = gql`
+  mutation Refresh($refreshToken: String!) {
+    refresh(input: {refreshToken: $refreshToken}) {
+      accessToken
+      refreshToken
+    }
+  }
+`
+
+export const MarkingDelete = gql`
+  mutation deleteMarking($id: ID!) {
+    deleteMarking(id: $id) {
+      id
     }
   }
 `;

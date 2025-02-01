@@ -42,6 +42,5 @@ export default function RootLayout({
         </StyledComponentsRegistry>
       </body>
     </html>
-
   );
 }

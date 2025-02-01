@@ -1,33 +1,95 @@
 import React, { useState } from "react";
 import styled from "styled-components";
-import { useMutation } from "@apollo/client";
+import { useMutation, useLazyQuery } from "@apollo/client";
 import { SIGNIN, SIGNUP } from "../graphql/mutations";
+import { GetMyRole } from "@/graphql/query";
 
-const Popup = ({ mode, onClose, setIsLoggedIn }: { mode: any, onClose: any, setIsLoggedIn: any }) => {
+const Popup = ({ mode, onClose, setIsLoggedIn, fetchMarkings }: { 
+  mode: number, 
+  onClose: () => void, 
+  setIsLoggedIn: (status: boolean) => void 
+  fetchMarkings: any
+}) => {
   const [isLogin, setIsLogin] = useState(mode === 1);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [username, setUsername] = useState("");
-  const [signin, { loading: signinLoading, error: signinError }] = useMutation(SIGNIN);
-  const [signup, { loading: signupLoading, error: signupError }] = useMutation(SIGNUP);
   const [passwordError, setPasswordError] = useState("");
+  const [loading, setLoading] = useState(false);
+  
+  const [signin] = useMutation(SIGNIN);
+  const [signup] = useMutation(SIGNUP);
+  const [getMyRole] = useLazyQuery(GetMyRole);
 
-  const toggleMode = () => {
-    setIsLogin(!isLogin);
+  const resetInputs = () => {
+    setEmail("");
+    setPassword("");
+    setConfirmPassword("");
+    setUsername("");
+    setPasswordError("");
   };
 
   const handleLogin = async () => {
+    setLoading(true);
     try {
-      const { data } = await signin({
+      localStorage.removeItem("accessToken");
+      localStorage.removeItem("refreshToken");
+      localStorage.removeItem("userName");
+      localStorage.removeItem("userRole");
+      localStorage.removeItem("userId");
+
+      const { data: loginData } = await signin({
         variables: { email, password },
       });
-      localStorage.setItem("accessToken", data.login.accessToken);
-      localStorage.setItem("refreshToken", data.login.refreshToken);
-      setIsLoggedIn(true);
-      onClose();
+
+      if (!loginData?.login?.accessToken || !loginData?.login?.refreshToken) {
+        console.log("로그인 토큰을 받지 못했습니다.");
+        return;
+      }
+
+      const accessToken = loginData.login.accessToken;
+      const refreshToken = loginData.login.refreshToken;
+      
+      if (accessToken && refreshToken) {
+        localStorage.setItem("accessToken", accessToken);
+        localStorage.setItem("refreshToken", refreshToken);
+        
+        const { data: roleData } = await getMyRole({
+          context: {
+            headers: {
+              authorization: `Bearer ${accessToken}`
+            }
+          },
+          fetchPolicy: "no-cache"
+        });
+        if (roleData?.getUserByCurrent) {
+          const userName = roleData.getUserByCurrent.username || "Unknown User";
+          const userRole = roleData.getUserByCurrent.role || "USER";
+          const userId = roleData.getUserByCurrent.id;
+          
+          localStorage.setItem("userName", userName);
+          localStorage.setItem("userRole", userRole);
+          localStorage.setItem("userId", userId);
+          setIsLoggedIn(true);
+          setTimeout(() => {
+            onClose();            
+            fetchMarkings();
+            window.location.reload();
+          }, 100);
+        } else {
+          console.log("사용자 정보를 받지 못했습니다.");
+        }
+      } else {
+        console.log("유효하지 않은 토큰입니다.");
+        return;
+      }
     } catch (err) {
       console.error("Login Error:", err);
+      alert("로그인에 실패했습니다. 다시 시도해주세요.");
+    } finally {
+      setLoading(false);
+      fetchMarkings();
     }
   };
 
@@ -37,16 +99,29 @@ const Popup = ({ mode, onClose, setIsLoggedIn }: { mode: any, onClose: any, setI
       return;
     }
     setPasswordError("");
-    
+    setLoading(true);
+
     try {
       const { data } = await signup({
         variables: { username, email, password },
       });
-      console.log("User ID:", data.createUser.id);
-      onClose();
+      
+      if (data?.createUser?.id) {
+        alert("회원가입이 완료되었습니다. 로그인해주세요.");
+        setIsLogin(true);
+        resetInputs(); // 회원가입 완료 후 입력창 초기화
+      }
     } catch (err) {
       console.error("Signup Error:", err);
+      alert("회원가입에 실패했습니다. 다시 시도해주세요.");
+    } finally {
+      setLoading(false);
     }
+  };
+
+  const toggleMode = () => {
+    setIsLogin(!isLogin);
+    resetInputs(); // 모드 전환 시 입력창 초기화
   };
 
   return (
@@ -58,36 +133,36 @@ const Popup = ({ mode, onClose, setIsLoggedIn }: { mode: any, onClose: any, setI
             ? <>오션이다에 오신 것을 환영합니다.<br />로그인 후 오션이다의 더 다양한 서비스를 즐겨보세요!</>
             : <>오션이다에 오신 것을 환영합니다.<br />회원가입 후 오션이다의 도우미가 되어주세요!</>}
         </Subtitle>
-        {!isLogin && <Input 
-          placeholder="사용자 이름을 입력해주세요." 
-          value={username}
-          onChange={(e) => setUsername(e.target.value)}
-        />}
-        <Input 
-          placeholder="이메일을 입력해주세요." 
+        {!isLogin && (
+          <Input
+            placeholder="사용자 이름을 입력해주세요."
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
+          />
+        )}
+        <Input
+          placeholder="이메일을 입력해주세요."
           value={email}
           onChange={(e) => setEmail(e.target.value)}
         />
-        <Input 
-          type="password" 
-          placeholder="비밀번호를 입력해주세요." 
+        <Input
+          type="password"
+          placeholder="비밀번호를 입력해주세요."
           value={password}
           onChange={(e) => setPassword(e.target.value)}
         />
         {!isLogin && (
-          <Input 
-            type="password" 
-            placeholder="비밀번호를 한 번 더 입력해주세요." 
+          <Input
+            type="password"
+            placeholder="비밀번호를 한 번 더 입력해주세요."
             value={confirmPassword}
             onChange={(e) => setConfirmPassword(e.target.value)}
           />
         )}
         {!isLogin && passwordError && <Error>{passwordError}</Error>}
-        <Button onClick={isLogin ? handleLogin : handleSignup} disabled={signinLoading || signupLoading}>
-          {signinLoading || signupLoading ? "Loading..." : isLogin ? "로그인" : "회원가입"}
+        <Button onClick={isLogin ? handleLogin : handleSignup} disabled={loading}>
+          {loading ? "처리중..." : (isLogin ? "로그인" : "회원가입")}
         </Button>
-        {signinError && <Error>{signinError.message}</Error>}
-        {signupError && <Error>{signupError.message}</Error>}
         <Footer>
           {isLogin ? (
             <p>

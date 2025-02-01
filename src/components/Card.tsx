@@ -2,18 +2,58 @@ import React, { useState, useRef, useEffect } from 'react';
 import styled from 'styled-components';
 import { AiOutlineMore } from "react-icons/ai";
 import { useMutation } from "@apollo/client";
-import { MarkingUpdate } from "../graphql/mutations";
+import { MarkingUpdate, MarkingDelete } from "../graphql/mutations";
+import { useApolloClient } from "@apollo/client";
+import Modify from "./Modify";
 
 interface CardProps {
-  data: any
-  role: string;
+  data: {
+    id: string;
+    regionId: string;
+    title: string;
+    content: string;
+    trashTypes: string[];
+    category: 'TRASH' | 'ART';
+    isApproved: boolean;
+    userId: string;
+    location: { lat: number; lng: number };
+    files: File[];
+  };
+  role: 'admin' | 'normal';
   onClick?: () => void;
+  fetchMarkings: any;
 }
 
-const Card: React.FC<CardProps> = ({ data, role, onClick }) => {
+const Card: React.FC<CardProps> = ({ data, role, onClick, fetchMarkings }) => {
+  const imageFile:any = data.files.find((file:any) => file.path.match(/\.(jpeg|jpg|png|gif)$/i));
+  const imageUrl = imageFile ? `${process.env.NEXT_PUBLIC_GRAPHQL_URI}${imageFile.path}` : undefined;
   const [toggle, setToggle] = useState(false);
   const popupRef = useRef<HTMLDivElement>(null);
-  const [updateMarking] = useMutation(MarkingUpdate);
+  const [isModifyOpen, setModifyOpen] = useState(false);
+  const [updateMarking] = useMutation(MarkingUpdate, {
+    onCompleted: () => {
+      alert("수락되었습니다");
+      client.refetchQueries({
+        include: ['GetMarkings', 'GetPendingMarkings'],
+      });
+      setToggle(false);
+    },
+    onError: (error) => {
+      console.error('Error:', error);
+      alert("오류가 발생했습니다");
+    }
+  });
+  const [deleteMarking] = useMutation(MarkingDelete, {
+    onCompleted: () => {
+      alert("삭제되었습니다");
+      fetchMarkings();
+    },
+    onError: (error) => {
+      console.error('Error:', error);
+      alert("오류가 발생했습니다");
+    }
+  });
+  const client = useApolloClient();
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
@@ -32,17 +72,14 @@ const Card: React.FC<CardProps> = ({ data, role, onClick }) => {
     e.stopPropagation();
     try {
       const token = localStorage.getItem('accessToken');
-      console.log(token);
       if (!token) {
         throw new Error("Authorization token not found");
       }
-  
-      console.log(data.id);
-  
+
       await updateMarking({
         variables: {
           id: data.id,
-          isApproved: true 
+          isApproved: true
         },
         context: {
           headers: {
@@ -50,47 +87,109 @@ const Card: React.FC<CardProps> = ({ data, role, onClick }) => {
           }
         }
       });
-  
-      alert("수락되었습니다");
-      setToggle(false);
+      fetchMarkings();
     } catch (error) {
       console.error('Error:', error);
       alert("오류가 발생했습니다");
     }
   };
 
-  return (
-    <Container>
-      <Body onClick={onClick}>
-        <Avatar />
-        <Box>
-          <TagList>
-            <Tag>{data.regionId}</Tag>
-            <Tag>{data.trashTypes}</Tag>
-          </TagList>
-          <Name>{data.title}</Name>
-          <Description>{data.content}</Description>
-        </Box>
-        {role === "admin" &&
-          <>
-            <Menu onClick={(e) => { e.stopPropagation(); setToggle(!toggle) }}>
-              <AiOutlineMore />
-            </Menu>
-            {toggle && (
-              <Popup ref={popupRef}>
-                <PopupButton onClick={handleAccept}>수락하기</PopupButton>
-                <PopupButton onClick={(e) => { e.stopPropagation(); alert("삭제됨"); }}>삭제하기</PopupButton>
-              </Popup>
-            )}
-          </>
+  const handleDelete = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    try {
+      await deleteMarking({
+        variables: {
+          id: data.id
+        },
+        context: {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem('accessToken')}`
+          }
         }
-      </Body>
-    </Container>
+      });
+      fetchMarkings();
+    } catch (error) {
+      console.error('Error:', error);
+      alert("오류가 발생했습니다");
+    }
+  };
+
+  const handleModify = () => {
+    setModifyOpen(true);
+  };
+
+  return (
+    <>
+      <Container>
+        <Body onClick={onClick}>
+        <Avatar $imageUrl={imageUrl} />
+          <Box>
+            <TagList>
+              <Tag>{data.regionId}</Tag>
+              {data.trashTypes?.slice(0, 2).map((type, index) => (
+                <Tag key={index}>{type}</Tag>
+              ))}
+            </TagList>
+            <Name>{data.title}</Name>
+            <Description>{data.content}</Description>
+          </Box>
+          {role === "admin" ?
+            <>
+              <Menu onClick={(e) => { e.stopPropagation(); setToggle(!toggle) }}>
+                <AiOutlineMore />
+              </Menu>
+              {toggle && (
+                <Popup ref={popupRef}>
+                  <PopupButton onClick={handleAccept}>수락하기</PopupButton>
+                  <PopupButton onClick={handleDelete}>삭제하기</PopupButton>
+                </Popup>
+              )}
+            </>
+            :
+            <>
+              {(
+                data.userId === localStorage.getItem("userId") ||
+                localStorage.getItem("userRole") === "ADMIN"
+              ) && (
+                  <>
+                    <Menu onClick={(e) => { e.stopPropagation(); setToggle(!toggle) }}>
+                      <AiOutlineMore />
+                    </Menu>
+                    {toggle && (
+                      <Popup ref={popupRef}>
+                        <PopupButton onClick={(e) => { e.stopPropagation(); handleModify(); }}>수정하기</PopupButton>
+                        <PopupButton onClick={handleDelete}>삭제하기</PopupButton>
+                      </Popup>
+                    )}
+                  </>
+                )}
+            </>
+          }
+        </Body>
+      </Container>
+      {isModifyOpen && (
+        <>
+          <Modify
+            onClose={() => setModifyOpen(false)}
+            initialData={{
+              region: data.regionId,
+              type: data.category,
+              trashTypes: data.trashTypes.join(', '),
+              title: data.title,
+              description: data.content,
+              location: data.location,
+              files: data.files,
+              id: data.id,
+            }}
+            fetchMarkings={fetchMarkings}
+          />
+        </>
+      )}
+    </>
   );
 };
 
-const Container = styled.div`
-  position: relative;
+const Container = styled.div`  position: relative;
   width: 100%;
   height: 150px;
   padding: 16px;
@@ -121,12 +220,15 @@ const Body = styled.div`
   width: 100%;
 `;
 
-const Avatar = styled.div`
+const Avatar = styled.div<{ $imageUrl?: string }>`
   position: absolute;
   top: 30px;
   width: 80px;
   height: 80px;
   background-color: #ccc;
+  background-image: ${({ $imageUrl }) => ($imageUrl ? `url(${$imageUrl})` : 'none')};
+  background-size: cover;
+  background-position: center;
 `;
 
 const Name = styled.h3`
@@ -190,3 +292,4 @@ const Box = styled.div`
 `
 
 export default Card;
+

@@ -36,7 +36,6 @@ function KaKaoMap({
 }) {
     const mapRef = useRef<kakao.maps.Map | null>(null);
     const [location, setLocation] = useState({ lat: 37.5665, lng: 126.978 });
-    const [customMarkers, setCustomMarkers] = useState<any[]>([]);
 
     const validData = Array.isArray(data) ? data : [];
 
@@ -63,21 +62,10 @@ function KaKaoMap({
             setSelectedCard(item);
 
             const moveLatLng = new kakao.maps.LatLng(
-                item.location.longitude,
-                item.location.latitude
+                item.location.latitude,
+                item.location.longitude
             );
             mapRef.current.panTo(moveLatLng);
-        }
-    };
-
-    const handleMapClick = (_: kakao.maps.Map, mouseEvent: kakao.maps.event.MouseEvent) => {
-        if (isMarkerMode) {
-            const clickLatLng = mouseEvent.latLng;
-            const newLocation = { 
-                lat: clickLatLng.getLat(), 
-                lng: clickLatLng.getLng() 
-            };
-            setCustomMarkers([newLocation]);
         }
     };
 
@@ -88,7 +76,6 @@ function KaKaoMap({
                 style={{ width: "100%", height: "100%" }}
                 level={3}
                 onCreate={(map) => (mapRef.current = map)}
-                onClick={handleMapClick}
             >
                 {validData.map((item: Marking, index: number) => {
                     if (item?.location) {
@@ -97,8 +84,8 @@ function KaKaoMap({
                             <MarkerComponent
                                 key={`data-${index}`}
                                 location={{
-                                    lat: item.location.longitude,
-                                    lng: item.location.latitude
+                                    lat: item.location.latitude,
+                                    lng: item.location.longitude
                                 }}
                                 onClick={() => handlePanTo(item)}
                             />

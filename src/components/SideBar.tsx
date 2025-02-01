@@ -18,9 +18,9 @@ interface SideBarProps {
     setActiveOption: (option: any) => void;
     openPopup: (type: number) => void;
     setIsMarkerMode: (isMarkerMode: boolean) => void;
-    isLoggedIn: any;
-    setIsLoggedIn: any;
-    setMarkings: any;
+    isLoggedIn: boolean;
+    onLogout: () => void;
+    fetchMarkings: any;
 }
 
 export default function SideBar({
@@ -32,8 +32,8 @@ export default function SideBar({
     openPopup,
     setIsMarkerMode,
     isLoggedIn,
-    setIsLoggedIn,
-    setMarkings
+    onLogout,
+    fetchMarkings
 }: SideBarProps) {
     const handleItemClick = (index: number) => {
         if (activeOption === index) {
@@ -45,13 +45,11 @@ export default function SideBar({
         }
     };
 
-    const Logout = () => {
-        if (isLoggedIn) {
-          localStorage.removeItem('accessToken');
-          localStorage.removeItem('refreshToken');
-          setIsLoggedIn(false);
-        }
-      };
+    const handleLogout = () => {
+        onLogout();
+        fetchMarkings();
+        window.location.reload();
+    };
 
     return (
         <>
@@ -72,17 +70,19 @@ export default function SideBar({
                         <StarIcon size={30} act={activeOption === 1} />
                         <Text>작품</Text>
                     </SidebarItem>
-                    <SidebarItem
-                        onClick={() => handleItemClick(2)}
-                        $active={activeOption === 2}
-                    >
-                        <SliderIcon size={30} act={activeOption === 2} />
-                        <Text>관리</Text>
-                    </SidebarItem>
+                    {localStorage.getItem("userRole") === "ADMIN" && (
+                        <SidebarItem
+                            onClick={() => handleItemClick(2)}
+                            $active={activeOption === 2}
+                        >
+                            <SliderIcon size={30} act={activeOption === 2} />
+                            <Text>관리</Text>
+                        </SidebarItem>
+                    )}
                 </SidebarMenu>
                 {
                     isLoggedIn ?
-                        <LoginButton onClick={Logout}>로그아웃</LoginButton> :
+                        <LoginButton onClick={handleLogout}>로그아웃</LoginButton> :
                         <LoginButton onClick={() => openPopup(1)}>로그인</LoginButton>
                 }
             </SidebarContainer>
@@ -102,9 +102,9 @@ export default function SideBar({
                                 <Detail selectedCard={selectedCard} />
                             ) : (
                                 <>
-                                    {activeOption === 0 && <CardList1 cardData={data} setSelectedCard={setSelectedCard} setIsMarkerMode={setIsMarkerMode} isLoggedIn={isLoggedIn}/>}
-                                    {activeOption === 1 && <CardList2 cardData={data} setSelectedCard={setSelectedCard} setIsMarkerMode={setIsMarkerMode} isLoggedIn={isLoggedIn}/>}
-                                    {activeOption === 2 && <CardList3 cardData={data} setSelectedCard={setSelectedCard} />}
+                                    {activeOption === 0 && <CardList1 cardData={data} setSelectedCard={setSelectedCard} setIsMarkerMode={setIsMarkerMode} isLoggedIn={isLoggedIn} fetchMarkings={fetchMarkings} />}
+                                    {activeOption === 1 && <CardList2 cardData={data} setSelectedCard={setSelectedCard} setIsMarkerMode={setIsMarkerMode} isLoggedIn={isLoggedIn} fetchMarkings={fetchMarkings} />}
+                                    {activeOption === 2 && <CardList3 cardData={data} setSelectedCard={setSelectedCard} fetchMarkings={fetchMarkings} />}
                                 </>
                             )
                             }</CardList>

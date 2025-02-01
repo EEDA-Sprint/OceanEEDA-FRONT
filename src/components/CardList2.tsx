@@ -4,11 +4,12 @@ import Card from "./Card";
 import { GoPencil } from "react-icons/go";
 import Create from "./Create";
 
-export default function CardList2({ cardData, setSelectedCard, setIsMarkerMode, isLoggedIn }: {
+export default function CardList2({ cardData, setSelectedCard, setIsMarkerMode, isLoggedIn, fetchMarkings }: {
     cardData: any[];
     setSelectedCard: (card: any) => void;
     setIsMarkerMode: (mode: boolean) => void;
     isLoggedIn: any;
+    fetchMarkings: () => void;
 }) {
     const [isActive, setIsActive] = useState(false);
     const [showCreate, setShowCreate] = useState(false);
@@ -20,6 +21,7 @@ export default function CardList2({ cardData, setSelectedCard, setIsMarkerMode, 
         if (!isActive) {
             setShowCreate(true);
         }
+        fetchMarkings();
     };
 
     const handleClose = () => {
@@ -27,6 +29,7 @@ export default function CardList2({ cardData, setSelectedCard, setIsMarkerMode, 
         setIsActive(false);
         setIsMarkerMode(false);
         setMarkerLocation(null);
+        fetchMarkings();
     };
 
     return (
@@ -45,12 +48,13 @@ export default function CardList2({ cardData, setSelectedCard, setIsMarkerMode, 
             }
             <CardList>
                 {cardData.map((data: any, index: number) => (
-                    data.isApproved && data.category === 'ART' &&
+                    data.category === 'ART' &&
                     <Card
                         key={index}
                         data={data}
                         role={"normal"}
                         onClick={() => setSelectedCard(data)}
+                        fetchMarkings={fetchMarkings}
                     />
                 ))}
             </CardList>

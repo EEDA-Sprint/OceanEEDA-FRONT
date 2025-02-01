@@ -16,6 +16,22 @@ export const GetAllMarkings = gql`
                 longitude
             }
             trashTypes
+            userId
+            files {
+                name
+                path
+            }
         }
     }
 `;
+
+export const GetMyRole = gql`
+    query MyQuery {
+        getUserByCurrent {
+            id
+            role
+            username
+        }
+    }
+`;
+

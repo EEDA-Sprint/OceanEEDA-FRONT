@@ -6,7 +6,7 @@ import styled from 'styled-components';
 const SlideShow = ({ selectedCard, setSelectedCard }: { selectedCard: any, setSelectedCard: React.Dispatch<React.SetStateAction<any>> }) => {
     const settings = {
         dots: false,
-        infinite: true,
+        infinite: false,
         speed: 500,
         slidesToShow: 1,
         slidesToScroll: 1,
@@ -18,24 +18,28 @@ const SlideShow = ({ selectedCard, setSelectedCard }: { selectedCard: any, setSe
             <BackButton onClick={() => setSelectedCard(null)}>
                 <FaAngleLeft />
             </BackButton>
-
             <Slider {...settings}>
-                <Slide>
-                    <Img src={selectedCard.image} />
-                </Slide>
-                <Slide>
-                    <Video controls autoPlay muted>
-                        <source src={selectedCard.video} type="video/mp4" />
-                    </Video>
-                </Slide>
+                {selectedCard.files.map((file: any, index: number) => (
+                    <Slide key={index}>
+                        {file.path.toLowerCase().endsWith('.mp4') ? (
+                            <Video controls autoPlay muted>
+                                <source src={`${process.env.NEXT_PUBLIC_GRAPHQL_URI}${file.path}`} type="video/mp4" />
+                            </Video>
+                        ) : (
+                            <Img src={`${process.env.NEXT_PUBLIC_GRAPHQL_URI}${file.path}`} alt={`Slide ${index}`} />
+                        )}
+                    </Slide>
+                ))}
             </Slider>
         </SlideContainer>
     );
 };
 
 const SlideContainer = styled.div`
-  position: relative;
-  width: 100%;
+    background-color: white;
+    position: relative;
+    width: 100%;
+    min-height: 60px;
 `;
 
 const BackButton = styled.button`

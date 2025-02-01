@@ -8,11 +8,16 @@ interface CardItem {
     description: string;
 }
 
-export default function CardList3({ cardData, setSelectedCard }: {
+export default function CardList3({ cardData, setSelectedCard, fetchMarkings }: {
     cardData: CardItem[];
     setSelectedCard: (card: CardItem) => void;
+    fetchMarkings: () => void;
 }) {
     
+    const handleUpdateOrDelete = () => {
+        fetchMarkings();
+    };
+
     return (
         <>
             <Title>승인 대기 중인 게시물 / 작품</Title>
@@ -24,6 +29,7 @@ export default function CardList3({ cardData, setSelectedCard }: {
                         data={data}
                         role={"admin"}
                         onClick={() => setSelectedCard(data)}
+                        fetchMarkings={fetchMarkings}
                     />
                 ))}
             </CardList>

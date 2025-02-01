@@ -5,7 +5,9 @@ export default function Detail({ selectedCard }: { selectedCard: any }) {
         <DetailView>
             <Tags>
                 <Tag>#{selectedCard.regionId}</Tag>
-                <Tag>#{selectedCard.trashTypes}</Tag>
+                {selectedCard.trashTypes.map((type: string, index: number) => (
+                    <Tag key={index}>#{type}</Tag>
+                ))}
             </Tags>
             
             <TitleWrapper>

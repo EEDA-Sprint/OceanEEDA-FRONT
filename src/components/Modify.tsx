@@ -1,13 +1,23 @@
 import React, { useState, useEffect } from "react";
-import styled, { css } from "styled-components";
+import styled from "styled-components";
 import { Map, MapMarker } from "react-kakao-maps-sdk";
 import { useMutation } from "@apollo/client";
-import { MarkingAdd } from "../graphql/mutations";
+import { MarkingUpdateWithDetails } from "../graphql/mutations";
 import { useApolloClient } from "@apollo/client";
 
-interface CreateProps {
+interface ModifyProps {
     onClose: () => void;
-    markerLocation?: { lat: number; lng: number };
+    initialData: {
+        region: string;
+        type: string;
+        trashTypes: string;
+        title: string;
+        description: string;
+        location: any;
+        files: File[];
+        id: string;
+    };
+    fetchMarkings: () => void;
 }
 
 interface NewEntry {
@@ -15,52 +25,41 @@ interface NewEntry {
     type: string;
     trashTypes: string;
     title: string;
-    name: string;
     description: string;
     location: { lat: number; lng: number };
     files: File[];
+    id: string;
 }
 
 interface PreviewUrls {
     files: Array<{ url: string; type: 'image' | 'video' }>;
 }
 
-const Create = ({ onClose, markerLocation }: CreateProps) => {
+
+const Modify: React.FC<ModifyProps> = ({ onClose, initialData, fetchMarkings }) => {
     const [step, setStep] = useState(1);
-    const [previewUrls, setPreviewUrls] = useState<PreviewUrls>({
-        files: []
-    });
     const [newEntry, setNewEntry] = useState<NewEntry>({
-        region: "",
-        type: "",
-        trashTypes: "",
-        title: "",
-        name: "",
-        description: "",
-        location: markerLocation || { lat: 37.5665, lng: 126.978 },
-        files: []
+        region: initialData.region,
+        type: initialData.type,
+        trashTypes: initialData.trashTypes,
+        title: initialData.title,
+        description: initialData.description,
+        location: { lat: initialData.location.latitude, lng: initialData.location.longitude},
+        files: [],
+        id: initialData.id
     });
+    const [previewUrls, setPreviewUrls] = useState<PreviewUrls>({
+        files: initialData.files.map((file: any) => ({
+            url: `${process.env.NEXT_PUBLIC_GRAPHQL_URI}${file.path}`,
+            type: (file.path.endsWith(".png") || file.path.endsWith(".jpg") || file.path.endsWith(".jpeg"))
+                ? "image"
+                : "video" as "image" | "video",
+        })),
+    });
+    
+    const [updateMarking] = useMutation(MarkingUpdateWithDetails);
 
     const client = useApolloClient();
-
-    const [uploadMarking, { loading, error, data }] = useMutation(MarkingAdd);
-
-
-    useEffect(() => {
-        if (navigator.geolocation) {
-            navigator.geolocation.getCurrentPosition(
-                (position) => {
-                    const { latitude, longitude } = position.coords;
-                    setNewEntry((prev) => ({
-                        ...prev,
-                        location: { lat: latitude, lng: longitude },
-                    }));
-                },
-                (err) => console.error("Geolocation Error:", err.message),
-                { enableHighAccuracy: true, maximumAge: 0 }
-            );
-        }
-    }, []);
 
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
         const { name, value } = e.target;
@@ -98,61 +97,33 @@ const Create = ({ onClose, markerLocation }: CreateProps) => {
 
     const handleMapClick = (_: kakao.maps.Map, mouseEvent: kakao.maps.event.MouseEvent) => {
         const clickLatLng = mouseEvent.latLng;
-        setNewEntry((prev) => ({
+
+        setNewEntry(prev => ({
             ...prev,
             location: { lat: clickLatLng.getLat(), lng: clickLatLng.getLng() },
         }));
     };
 
-    const validateForm = () => {
-        if (!newEntry.region || !newEntry.type || !newEntry.title) {
-            alert("필수 정보를 입력해주세요!");
-            return false;
-        }
-        return true;
-    };
-
-    const handleNext = () => {
-        if (validateForm()) {
-            setStep(2);
-        }
-    };
-
     const handleSubmit = async () => {
         try {
             const token = localStorage.getItem('accessToken');
-            const userName = localStorage.getItem('userName');
-
             if (!token) throw new Error("Authorization token not found");
-            if (!userName) throw new Error("User name not found");
-
-            const trashTypesArray = newEntry.trashTypes
-                .split(',')
-                .map(item => item.trim())
-                .filter(item => item !== '');
 
             const fileInputs = newEntry.files.map((file, index) => ({
                 name: `file_${index}`,
                 file: file,
             }));
 
-            const latitude = newEntry.location.lng;
-            const longitude = newEntry.location.lat;
-
-            if (typeof latitude !== 'number' || typeof longitude !== 'number') {
-                throw new Error("Invalid latitude or longitude");
-            }
-
-            const response = await uploadMarking({
+            const response = await updateMarking({
                 variables: {
-                    regionId: newEntry.region || '',
+                    id: newEntry.id,
+                    regionId: newEntry.region,
                     category: newEntry.type,
                     content: newEntry.description,
-                    trashTypes: trashTypesArray,
+                    trashTypes: newEntry.trashTypes.split(',').map(item => item.trim()),
                     title: newEntry.title,
-                    poster: userName,
-                    latitude: latitude,
-                    longitude: longitude,
+                    latitude: newEntry.location.lat,
+                    longitude: newEntry.location.lng,
                     files: fileInputs,
                 },
                 context: {
@@ -161,13 +132,14 @@ const Create = ({ onClose, markerLocation }: CreateProps) => {
                     },
                 },
             });
-            
-            console.log("Upload successful:", response.data);
-            alert("업로드 성공!");
+
+            console.log("Update successful:", response.data);
+            alert("수정 성공!");
+            fetchMarkings();
             onClose();
         } catch (err) {
             console.error("Error:", err instanceof Error ? err.message : err);
-            alert("등록 중 오류가 발생했습니다: " + (err instanceof Error ? err.message : "알 수 없는 오류"));
+            alert("수정 중 오류가 발생했습니다: " + (err instanceof Error ? err.message : "알 수 없는 오류"));
         }
     };
 
@@ -176,7 +148,7 @@ const Create = ({ onClose, markerLocation }: CreateProps) => {
             <PopupContainer onClick={(e) => e.stopPropagation()}>
                 {step === 1 ? (
                     <>
-                        <Title>정보 입력</Title>
+                        <Title>정보 수정</Title>
                         <Subtitle>등록하실 정보를 입력해주세요!</Subtitle>
 
                         <Select name="region" value={newEntry.region} onChange={handleInputChange}>
@@ -215,9 +187,7 @@ const Create = ({ onClose, markerLocation }: CreateProps) => {
                             onChange={handleInputChange}
                         />
 
-                        <Button onClick={handleNext} disabled={loading}>
-                            {loading ? "로딩 중..." : "다음"}
-                        </Button>
+                        <Button onClick={() => setStep(2)}>다음</Button>
                     </>
                 ) : step === 2 ? (
                     <>
@@ -227,7 +197,6 @@ const Create = ({ onClose, markerLocation }: CreateProps) => {
                         <MediaUploadSection>
                             <UploadBox>
                                 <FileInputLabel>
-                                    <FileIcon>📸</FileIcon>
                                     파일 추가하기
                                     <FileInput
                                         type="file"
@@ -252,11 +221,12 @@ const Create = ({ onClose, markerLocation }: CreateProps) => {
                                     </PreviewGrid>
                                 )}
                             </UploadBox>
-                            <ButtonGroup>
-                                <Button onClick={() => setStep(1)}>이전</Button>
-                                <Button onClick={() => setStep(3)}>다음</Button>
-                            </ButtonGroup>
                         </MediaUploadSection>
+
+                        <ButtonGroup>
+                            <Button onClick={() => setStep(1)}>이전</Button>
+                            <Button onClick={() => setStep(3)}>다음</Button>
+                        </ButtonGroup>
                     </>
                 ) : (
                     <>
@@ -279,14 +249,9 @@ const Create = ({ onClose, markerLocation }: CreateProps) => {
                                 />
                             </Map>
                         </MapContainer>
-                        <LocationText>
-                            선택된 위치: {newEntry.location.lat.toFixed(6)}, {newEntry.location.lng.toFixed(6)}
-                        </LocationText>
                         <ButtonGroup>
                             <Button onClick={() => setStep(2)}>이전</Button>
-                            <Button onClick={handleSubmit} disabled={loading}>
-                                {loading ? "등록 중..." : "등록하기"}
-                            </Button>
+                            <Button onClick={handleSubmit}>수정하기</Button>
                         </ButtonGroup>
                     </>
                 )}
@@ -295,8 +260,9 @@ const Create = ({ onClose, markerLocation }: CreateProps) => {
     );
 };
 
-export default Create;
+export default Modify;
 
+// Styled Components
 const Overlay = styled.div`
   position: fixed;
   top: 0;
@@ -318,8 +284,6 @@ const PopupContainer = styled.div`
   padding: 50px;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
   text-align: center;
-  align-items: center;
-  justify-content: center;
 `;
 
 const Title = styled.p`
@@ -350,6 +314,104 @@ const Input = styled.input`
   }
 `;
 
+const TextArea = styled.textarea`
+  width: 90%;
+  padding: 10px;
+  margin: 10px 0;
+  background-color: #F2F2F2;
+  border: none;
+  border-radius: 5px;
+  color: black;
+  min-height: 100px;
+  resize: vertical;
+  &::placeholder {
+    color: #999999;
+  }
+`;
+
+const Select = styled.select`
+  width: 90%;
+  padding: 10px;
+  margin: 10px 0;
+  background-color: #F2F2F2;
+  border: none;
+  border-radius: 5px;
+  color: black;
+  cursor: pointer;
+  &:focus {
+    outline: none;
+  }
+`;
+
+const MediaUploadSection = styled.div`
+  width: 90%;
+  margin: 0 auto;
+`;
+
+const UploadBox = styled.div`
+  border: 2px dashed #008080;
+  border-radius: 10px;
+  padding: 20px;
+  margin: 20px 0;
+  text-align: center;
+  cursor: pointer;
+  position: relative;
+`;
+
+const PreviewGrid = styled.div`
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  margin-top: 10px;
+`;
+
+const PreviewItem = styled.div`
+  position: relative;
+  aspect-ratio: 1;
+  border-radius: 8px;
+  overflow: hidden;
+`;
+
+const PreviewImage = styled.img`
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+`;
+
+const PreviewVideo = styled.video`
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+`;
+
+const RemoveButton = styled.button`
+  position: absolute;
+  top: -10px;
+  right: -10px;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background-color: #ff4444;
+  color: white;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  &:hover {
+    background-color: #cc0000;
+  }
+`;
+
+const MapContainer = styled.div`
+  width: 90%;
+  height: 300px;
+  margin: 20px auto;
+  border-radius: 10px;
+  overflow: hidden;
+`;
+
 const Button = styled.button`
   width: 90%;
   padding: 10px;
@@ -359,131 +421,19 @@ const Button = styled.button`
   border-radius: 5px;
   cursor: pointer;
   font-weight: bold;
-
   &:hover {
     background-color: #006666;
   }
 `;
 
-const MapContainer = styled.div`
-    width: 90%;
-    height: 300px;
-    margin: 20px auto;
-    border-radius: 10px;
-    overflow: hidden;
-`;
-
-const LocationText = styled.div`
-    color: #666;
-    margin-bottom: 20px;
-    font-size: 14px;
-`;
-
-const Select = styled.select`
-    width: 90%;
-    padding: 10px;
-    margin: 10px 0;
-    background-color: #F2F2F2;
-    border: none;
-    border-radius: 5px;
-    color: black;
-    cursor: pointer;
-
-    &:focus {
-        outline: none;
-    }
-`;
-
-const TextArea = styled.textarea`
-    width: 90%;
-    padding: 10px;
-    margin: 10px 0;
-    background-color: #F2F2F2;
-    border: none;
-    border-radius: 5px;
-    color: black;
-    min-height: 100px;
-    resize: vertical;
-
-    &::placeholder {
-        color: #999999;
-    }
-`;
-
-const MediaUploadSection = styled.div`
-    width: 90%;
-    margin: 0 auto;
-`;
-
-const UploadBox = styled.div`
-    border: 2px dashed #008080;
-    border-radius: 10px;
-    padding: 20px;
-    margin: 20px 0;
-    text-align: center;
-    cursor: pointer;
-    position: relative;
-`;
-
-const PreviewGrid = styled.div`
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 10px;
-    margin-top: 10px;
-`;
-
-const PreviewItem = styled.div`
-    position: relative;
-    aspect-ratio: 1;
-    border-radius: 8px;
-    overflow: hidden;
-`;
-
-const PreviewImage = styled.img`
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-`;
-
-const PreviewVideo = styled.video`
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-`;
-
-const RemoveButton = styled.button`
-    position: absolute;
-    top: -10px;
-    right: -10px;
-    width: 24px;
-    height: 24px;
-    border-radius: 50%;
-    background-color: #ff4444;
-    color: white;
-    border: none;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 12px;
-
-    &:hover {
-        background-color: #cc0000;
-    }
-`;
-
 const ButtonGroup = styled.div`
-    display: flex;
-    gap: 10px;
-    margin-top: 20px;
+  display: flex;
+  gap: 10px;
+  margin-top: 20px;
 
-    button {
-        flex: 1;
-    }
-`;
-
-const FileInput = styled.input`
-    display: none;
+  button {
+    flex: 1;
+  }
 `;
 
 const FileInputLabel = styled.label`
@@ -491,10 +441,9 @@ const FileInputLabel = styled.label`
     cursor: pointer;
     color: #008080;
     font-weight: bold;
+    margin-bottom: 10px;
 `;
 
-const FileIcon = styled.span`
-    font-size: 24px;
-    display: block;
-    margin-bottom: 8px;
+const FileInput = styled.input`
+    display: none;
 `;
