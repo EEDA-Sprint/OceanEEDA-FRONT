@@ -1,9 +1,8 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import styled from "styled-components";
 import { Map, MapMarker } from "react-kakao-maps-sdk";
 import { useMutation } from "@apollo/client";
 import { MarkingUpdateWithDetails } from "../graphql/mutations";
-import { useApolloClient } from "@apollo/client";
 
 interface ModifyProps {
     onClose: () => void;
@@ -18,6 +17,7 @@ interface ModifyProps {
         id: string;
     };
     fetchMarkings: () => void;
+    regions: any;
 }
 
 interface NewEntry {
@@ -36,7 +36,7 @@ interface PreviewUrls {
 }
 
 
-const Modify: React.FC<ModifyProps> = ({ onClose, initialData, fetchMarkings }) => {
+const Modify: React.FC<ModifyProps> = ({ onClose, initialData, fetchMarkings, regions }) => {
     const [step, setStep] = useState(1);
     const [newEntry, setNewEntry] = useState<NewEntry>({
         region: initialData.region,
@@ -44,7 +44,7 @@ const Modify: React.FC<ModifyProps> = ({ onClose, initialData, fetchMarkings }) 
         trashTypes: initialData.trashTypes,
         title: initialData.title,
         description: initialData.description,
-        location: { lat: initialData.location.latitude, lng: initialData.location.longitude},
+        location: { lat: initialData.location.latitude, lng: initialData.location.longitude },
         files: [],
         id: initialData.id
     });
@@ -56,10 +56,36 @@ const Modify: React.FC<ModifyProps> = ({ onClose, initialData, fetchMarkings }) 
                 : "video" as "image" | "video",
         })),
     });
-    
-    const [updateMarking] = useMutation(MarkingUpdateWithDetails);
+    const [updateMarking, { loading }] = useMutation(MarkingUpdateWithDetails);
 
-    const client = useApolloClient();
+    const convertURLtoFile = async (url: string) => {
+        const response = await fetch(url);
+        const data = await response.blob();
+        const ext = url.split(".").pop();
+        const filename = url.split("/").pop();
+        const metadata = { type: `image/${ext}` };
+        return new File([data], filename!, metadata);
+    };
+
+    useEffect(() => {
+        const convertAllUrlsToFile = async () => {
+            if (newEntry.files.length > 0) return;
+
+            const files = await Promise.all(
+                previewUrls.files.map(async (file) => {
+                    const convertedFile = await convertURLtoFile(file.url);
+                    return convertedFile;
+                })
+            );
+
+            setNewEntry((prev) => ({
+                ...prev,
+                files: [...files],
+            }));
+        };
+
+        convertAllUrlsToFile();
+    }, [previewUrls.files]);
 
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
         const { name, value } = e.target;
@@ -114,7 +140,7 @@ const Modify: React.FC<ModifyProps> = ({ onClose, initialData, fetchMarkings }) 
                 file: file,
             }));
 
-            const response = await updateMarking({
+            await updateMarking({
                 variables: {
                     id: newEntry.id,
                     regionId: newEntry.region,
@@ -132,8 +158,7 @@ const Modify: React.FC<ModifyProps> = ({ onClose, initialData, fetchMarkings }) 
                     },
                 },
             });
-
-            console.log("Update successful:", response.data);
+            console.log("Update successful");
             alert("수정 성공!");
             fetchMarkings();
             onClose();
@@ -144,7 +169,7 @@ const Modify: React.FC<ModifyProps> = ({ onClose, initialData, fetchMarkings }) 
     };
 
     return (
-        <Overlay onClick={onClose}>
+        <Overlay onClick={loading ? (e) => e.stopPropagation() : onClose}>
             <PopupContainer onClick={(e) => e.stopPropagation()}>
                 {step === 1 ? (
                     <>
@@ -153,9 +178,11 @@ const Modify: React.FC<ModifyProps> = ({ onClose, initialData, fetchMarkings }) 
 
                         <Select name="region" value={newEntry.region} onChange={handleInputChange}>
                             <option value="">지역 선택 *</option>
-                            <option value="서울">서울</option>
-                            <option value="부산">부산</option>
-                            <option value="인천">인천</option>
+                            {
+                                regions.getAllRegions.map((item) => (
+                                    <option key={item.id} value={item.id}>{item.name}</option>
+                                ))
+                            }
                         </Select>
 
                         <Select name="type" value={newEntry.type} onChange={handleInputChange}>
@@ -197,6 +224,7 @@ const Modify: React.FC<ModifyProps> = ({ onClose, initialData, fetchMarkings }) 
                         <MediaUploadSection>
                             <UploadBox>
                                 <FileInputLabel>
+                                    <FileIcon>📸</FileIcon>
                                     파일 추가하기
                                     <FileInput
                                         type="file"
@@ -237,7 +265,7 @@ const Modify: React.FC<ModifyProps> = ({ onClose, initialData, fetchMarkings }) 
                                 center={newEntry.location}
                                 style={{ width: "100%", height: "100%" }}
                                 level={3}
-                                onClick={handleMapClick}
+                                onClick={loading ? () => { } : handleMapClick}  // Disable map click when loading
                             >
                                 <MapMarker
                                     position={newEntry.location}
@@ -250,8 +278,8 @@ const Modify: React.FC<ModifyProps> = ({ onClose, initialData, fetchMarkings }) 
                             </Map>
                         </MapContainer>
                         <ButtonGroup>
-                            <Button onClick={() => setStep(2)}>이전</Button>
-                            <Button onClick={handleSubmit}>수정하기</Button>
+                            <Button onClick={() => setStep(2)} disabled={loading}>이전</Button>
+                            <Button onClick={handleSubmit} disabled={loading}>{loading ? "수정 중..." : "수정하기"}</Button>
                         </ButtonGroup>
                     </>
                 )}
@@ -446,4 +474,10 @@ const FileInputLabel = styled.label`
 
 const FileInput = styled.input`
     display: none;
+`;
+
+const FileIcon = styled.span`
+    font-size: 24px;
+    display: block;
+    margin-bottom: 8px;
 `;

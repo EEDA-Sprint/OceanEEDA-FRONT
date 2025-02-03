@@ -1,20 +1,19 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import KaKaoMap from "@/components/KaKaoMap";
+import KaKaoMap from "@/components/Map/KaKaoMap";
 import SideBar from "@/components/SideBar";
 import Popup from "@/components/PopUp";
 import "slick-carousel/slick/slick.css";
 import "slick-carousel/slick/slick-theme.css";
 import { useMutation, useQuery } from "@apollo/client";
-import { GetAllMarkings } from "../graphql/query";
+import { GetAllMarkings, GetAllRegion } from "../graphql/query";
 import { Refresh } from "@/graphql/mutations";
 
 export default function Main() {
     const [selectedCard, setSelectedCard] = useState<any | null>(null);
     const [activeOption, setActiveOption] = useState<number | null>(null);
     const [popupMode, setPopupMode] = useState<number>(0);
-    const [isMarkerMode, setIsMarkerMode] = useState(false);
     const [isLoggedIn, setIsLoggedIn] = useState(false);
     const [accessToken, setAccessToken] = useState<string | null>(null);
 
@@ -42,13 +41,16 @@ export default function Main() {
         },
     });
 
+    const { data:Regions, loading, refetch:updateRegion } = useQuery(GetAllRegion);
+
     const fetchMarkings = () => {
         refetch();
+        updateRegion();
     };
 
     useEffect(() => {
         fetchMarkings();
-    }, [markingData]);
+      }, [fetchMarkings]);      
 
     useEffect(() => {
         const token = localStorage.getItem("accessToken");
@@ -85,13 +87,12 @@ export default function Main() {
             }
         };
 
-        refreshTokenPeriodically(); // 초기 실행
-        const intervalId = setInterval(refreshTokenPeriodically, 14 * 60 * 1000); // 14분마다 실행
+        refreshTokenPeriodically();
+        const intervalId = setInterval(refreshTokenPeriodically, 14 * 60 * 1000);
 
-        return () => clearInterval(intervalId); // cleanup
+        return () => clearInterval(intervalId);
     }, [RefreshToken]);
 
-    // 로그아웃 처리
     const handleLogout = () => {
         localStorage.removeItem("accessToken");
         localStorage.removeItem("refreshToken");
@@ -102,27 +103,22 @@ export default function Main() {
         setIsLoggedIn(false);
     };
 
-    // 팝업 열기
     const openPopup = (mode: number) => {
         setPopupMode(mode);
     };
 
-    // 팝업 닫기
     const closePopup = () => {
         setPopupMode(0);
     };
 
-    // 로딩 중일 때
-    if (markingsLoad) {
+    if (markingsLoad || loading) {
         return <div>Loading...</div>;
     }
 
-    // 에러 발생 시
     if (error1) {
         return <div>Error: {error1.message}</div>;
     }
 
-    // 데이터가 없을 때
     if (!markingData?.getAllMarkings) {
         return (
             <div>
@@ -154,16 +150,16 @@ export default function Main() {
                 activeOption={activeOption}
                 setActiveOption={setActiveOption}
                 openPopup={openPopup}
-                setIsMarkerMode={setIsMarkerMode}
                 isLoggedIn={isLoggedIn}
                 onLogout={handleLogout}
                 fetchMarkings={fetchMarkings}
+                regions={Regions}
+                updateRegion={updateRegion}
             />
             <KaKaoMap
                 data={markingData.getAllMarkings}
                 setSelectedCard={setSelectedCard}
                 setActiveOption={setActiveOption}
-                isMarkerMode={isMarkerMode}
             />
         </div>
     );

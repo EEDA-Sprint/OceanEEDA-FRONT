@@ -104,3 +104,20 @@ export const MarkingDelete = gql`
     }
   }
 `;
+
+export const AddRegion = gql`
+  mutation RegionAdd($name: String!) {
+    createRegion(input: { name: $name }) {
+      id
+      name
+    }
+  }
+`;
+
+export const deleteRegion = gql`
+  mutation RegionAdd($id: ID!) {
+    deleteRegion(id: $id) {
+      name
+    }
+  }
+`

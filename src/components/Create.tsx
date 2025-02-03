@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from "react";
-import styled, { css } from "styled-components";
+import styled from "styled-components";
 import { Map, MapMarker } from "react-kakao-maps-sdk";
 import { useMutation } from "@apollo/client";
 import { MarkingAdd } from "../graphql/mutations";
-import { useApolloClient } from "@apollo/client";
 
 interface CreateProps {
     onClose: () => void;
     markerLocation?: { lat: number; lng: number };
+    regions: any;
 }
 
 interface NewEntry {
@@ -25,7 +25,7 @@ interface PreviewUrls {
     files: Array<{ url: string; type: 'image' | 'video' }>;
 }
 
-const Create = ({ onClose, markerLocation }: CreateProps) => {
+const Create = ({ onClose, markerLocation, regions }: CreateProps) => {
     const [step, setStep] = useState(1);
     const [previewUrls, setPreviewUrls] = useState<PreviewUrls>({
         files: []
@@ -41,9 +41,7 @@ const Create = ({ onClose, markerLocation }: CreateProps) => {
         files: []
     });
 
-    const client = useApolloClient();
-
-    const [uploadMarking, { loading, error, data }] = useMutation(MarkingAdd);
+    const [uploadMarking, { loading }] = useMutation(MarkingAdd);
 
 
     useEffect(() => {
@@ -136,14 +134,14 @@ const Create = ({ onClose, markerLocation }: CreateProps) => {
                 file: file,
             }));
 
-            const latitude = newEntry.location.lng;
-            const longitude = newEntry.location.lat;
+            const latitude = newEntry.location.lat;
+            const longitude = newEntry.location.lng;
 
             if (typeof latitude !== 'number' || typeof longitude !== 'number') {
                 throw new Error("Invalid latitude or longitude");
             }
 
-            const response = await uploadMarking({
+            await uploadMarking({
                 variables: {
                     regionId: newEntry.region || '',
                     category: newEntry.type,
@@ -161,8 +159,8 @@ const Create = ({ onClose, markerLocation }: CreateProps) => {
                     },
                 },
             });
-            
-            console.log("Upload successful:", response.data);
+
+            console.log("Upload successful");
             alert("업로드 성공!");
             onClose();
         } catch (err) {
@@ -172,7 +170,7 @@ const Create = ({ onClose, markerLocation }: CreateProps) => {
     };
 
     return (
-        <Overlay onClick={onClose}>
+        <Overlay onClick={loading ? (e) => e.stopPropagation() : onClose}>
             <PopupContainer onClick={(e) => e.stopPropagation()}>
                 {step === 1 ? (
                     <>
@@ -181,9 +179,11 @@ const Create = ({ onClose, markerLocation }: CreateProps) => {
 
                         <Select name="region" value={newEntry.region} onChange={handleInputChange}>
                             <option value="">지역 선택 *</option>
-                            <option value="서울">서울</option>
-                            <option value="부산">부산</option>
-                            <option value="인천">인천</option>
+                            {
+                                regions.getAllRegions.map((item) => (
+                                    <option key={item.id} value={item.id}>{item.name}</option>
+                                ))
+                            }
                         </Select>
 
                         <Select name="type" value={newEntry.type} onChange={handleInputChange}>
@@ -267,7 +267,7 @@ const Create = ({ onClose, markerLocation }: CreateProps) => {
                                 center={newEntry.location}
                                 style={{ width: "100%", height: "100%" }}
                                 level={3}
-                                onClick={handleMapClick}
+                                onClick={loading ? () => { } : handleMapClick}
                             >
                                 <MapMarker
                                     position={newEntry.location}
@@ -283,7 +283,7 @@ const Create = ({ onClose, markerLocation }: CreateProps) => {
                             선택된 위치: {newEntry.location.lat.toFixed(6)}, {newEntry.location.lng.toFixed(6)}
                         </LocationText>
                         <ButtonGroup>
-                            <Button onClick={() => setStep(2)}>이전</Button>
+                            <Button onClick={() => setStep(2)} disabled={loading}>이전</Button>
                             <Button onClick={handleSubmit} disabled={loading}>
                                 {loading ? "등록 중..." : "등록하기"}
                             </Button>

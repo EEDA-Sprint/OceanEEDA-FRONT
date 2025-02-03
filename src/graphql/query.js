@@ -35,3 +35,11 @@ export const GetMyRole = gql`
     }
 `;
 
+export const GetAllRegion = gql`
+    query MyQuery {
+        getAllRegions {
+            id
+            name
+        }
+    }
+`

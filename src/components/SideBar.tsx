@@ -1,12 +1,11 @@
 "use client";
 
 import styled from "styled-components";
-import { useEffect, useState } from "react";
 import { MapIcon, StarIcon, SliderIcon } from "./Icons";
 import SearchBar from "./SearchBar";
-import CardList1 from "./CardList1";
-import CardList2 from "./CardList2";
-import CardList3 from "./CardList3";
+import CardList1 from "./Card/CardList1";
+import CardList2 from "./Card/CardList2";
+import CardList3 from "./Card/CardList3";
 import Detail from "./Detail";
 import SlideShow from "./Slide";
 
@@ -17,10 +16,11 @@ interface SideBarProps {
     activeOption: any;
     setActiveOption: (option: any) => void;
     openPopup: (type: number) => void;
-    setIsMarkerMode: (isMarkerMode: boolean) => void;
     isLoggedIn: boolean;
     onLogout: () => void;
     fetchMarkings: any;
+    regions: any;
+    updateRegion: any;
 }
 
 export default function SideBar({
@@ -30,10 +30,11 @@ export default function SideBar({
     activeOption,
     setActiveOption,
     openPopup,
-    setIsMarkerMode,
     isLoggedIn,
     onLogout,
-    fetchMarkings
+    fetchMarkings,
+    regions,
+    updateRegion
 }: SideBarProps) {
     const handleItemClick = (index: number) => {
         if (activeOption === index) {
@@ -99,12 +100,12 @@ export default function SideBar({
                         :
                         <CardList>
                             {selectedCard ? (
-                                <Detail selectedCard={selectedCard} />
+                                <Detail selectedCard={selectedCard} regions={regions}/>
                             ) : (
                                 <>
-                                    {activeOption === 0 && <CardList1 cardData={data} setSelectedCard={setSelectedCard} setIsMarkerMode={setIsMarkerMode} isLoggedIn={isLoggedIn} fetchMarkings={fetchMarkings} />}
-                                    {activeOption === 1 && <CardList2 cardData={data} setSelectedCard={setSelectedCard} setIsMarkerMode={setIsMarkerMode} isLoggedIn={isLoggedIn} fetchMarkings={fetchMarkings} />}
-                                    {activeOption === 2 && <CardList3 cardData={data} setSelectedCard={setSelectedCard} fetchMarkings={fetchMarkings} />}
+                                    {activeOption === 0 && <CardList1 cardData={data} setSelectedCard={setSelectedCard} isLoggedIn={isLoggedIn} fetchMarkings={fetchMarkings} regions={regions} />}
+                                    {activeOption === 1 && <CardList2 cardData={data} setSelectedCard={setSelectedCard} isLoggedIn={isLoggedIn} fetchMarkings={fetchMarkings} regions={regions}/>}
+                                    {activeOption === 2 && <CardList3 cardData={data} setSelectedCard={setSelectedCard} fetchMarkings={fetchMarkings} regions={regions} updateregion={updateRegion}/>}
                                 </>
                             )
                             }</CardList>

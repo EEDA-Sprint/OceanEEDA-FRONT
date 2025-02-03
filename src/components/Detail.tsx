@@ -1,20 +1,23 @@
 import styled from "styled-components";
 
-export default function Detail({ selectedCard }: { selectedCard: any }) {
+export default function Detail({ selectedCard, regions }: { selectedCard: any, regions: any }) {
     return (
         <DetailView>
             <Tags>
-                <Tag>#{selectedCard.regionId}</Tag>
+                <Tag>
+                    #{regions.getAllRegions.find(region => region.id === selectedCard.regionId)?.name || "알 수 없음"}
+                </Tag>
+
                 {selectedCard.trashTypes.map((type: string, index: number) => (
                     <Tag key={index}>#{type}</Tag>
                 ))}
             </Tags>
-            
+
             <TitleWrapper>
                 <DetailTitle>{selectedCard.title}</DetailTitle>
                 <DetailSubtitle>조사자: {selectedCard.poster}</DetailSubtitle>
             </TitleWrapper>
-            
+
             <DetailDescription>
                 {selectedCard.content}
             </DetailDescription>
