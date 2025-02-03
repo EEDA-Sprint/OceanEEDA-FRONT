@@ -152,6 +152,7 @@ const Create = ({ onClose, markerLocation, regions }: CreateProps) => {
                     latitude: latitude,
                     longitude: longitude,
                     files: fileInputs,
+                    isApproved: localStorage.getItem("userRole") === "ADMIN"
                 },
                 context: {
                     headers: {

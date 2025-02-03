@@ -28,6 +28,7 @@ export const MarkingAdd = gql`
     $latitude: Float!,
     $longitude: Float!,
     $files: [FileInput!]!
+    $isApproved: Boolean
   ) {
     createMarking(
       input: {
@@ -39,7 +40,7 @@ export const MarkingAdd = gql`
         poster: $poster,
         location: { latitude: $latitude, longitude: $longitude },
         files: $files,
-        isApproved: false
+        isApproved: $isApproved
       }
     ) {
       id
@@ -59,6 +60,7 @@ export const MarkingUpdateWithDetails = gql`
     $regionId: String,
     $title: String,
     $trashTypes: [String!]
+    $isApproved: Boolean
   ) {
     updateMarking(
       id: $id,
@@ -66,7 +68,7 @@ export const MarkingUpdateWithDetails = gql`
         category: $category,
         content: $content,
         files: $files,
-        isApproved: false,
+        isApproved: $isApproved,
         location: { latitude: $latitude, longitude: $longitude },
         poster: $poster,
         regionId: $regionId,

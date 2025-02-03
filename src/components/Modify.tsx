@@ -151,6 +151,7 @@ const Modify: React.FC<ModifyProps> = ({ onClose, initialData, fetchMarkings, re
                     latitude: newEntry.location.lat,
                     longitude: newEntry.location.lng,
                     files: fileInputs,
+                    isApproved: localStorage.getItem("userRole") === "ADMIN"
                 },
                 context: {
                     headers: {
@@ -158,6 +159,7 @@ const Modify: React.FC<ModifyProps> = ({ onClose, initialData, fetchMarkings, re
                     },
                 },
             });
+            console.log(localStorage.getItem("userRole") === "ADMIN")
             console.log("Update successful");
             alert("수정 성공!");
             fetchMarkings();
