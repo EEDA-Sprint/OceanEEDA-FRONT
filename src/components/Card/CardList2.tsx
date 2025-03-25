@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import styled from "styled-components";
 import Card from "./Card";
 import { GoPencil } from "react-icons/go";
@@ -29,6 +29,10 @@ export default function CardList2({ cardData, setSelectedCard, isLoggedIn, fetch
         setMarkerLocation(null);
         fetchMarkings();
     };
+
+    useEffect(() => {
+        fetchMarkings();
+    }, []);
 
     return (
         <>

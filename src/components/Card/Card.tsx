@@ -17,7 +17,7 @@ interface CardProps {
     isApproved: boolean;
     userId: string;
     location: { lat: number; lng: number };
-    files: File[];
+    files: Array<{ path: string }>;
   };
   role: 'admin' | 'normal';
   onClick?: () => void;

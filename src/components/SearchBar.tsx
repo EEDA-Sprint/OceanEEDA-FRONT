@@ -2,14 +2,31 @@
 
 import styled from "styled-components";
 import { BiSearch } from "react-icons/bi";
+import { useState } from "react";
 
-export default function SearchBar() {
+interface SearchBarProps {
+    onSearch: (query: string) => void;
+}
+
+export default function SearchBar({ onSearch }: SearchBarProps) {
+    const [searchQuery, setSearchQuery] = useState("");
+
+    const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const query = e.target.value;
+        setSearchQuery(query);
+        onSearch(query);
+    };
+
     return (
         <SearchBarContainer>
             <SearchIcon>
                 <BiSearch size={20} />
             </SearchIcon>
-            <SearchInput placeholder="지역명을 입력해주세요" />
+            <SearchInput 
+                placeholder="지역명을 입력해주세요" 
+                value={searchQuery}
+                onChange={handleSearch}
+            />
         </SearchBarContainer>
     );
 }

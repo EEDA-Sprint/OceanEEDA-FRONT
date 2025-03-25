@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import KaKaoMap from "@/components/Map/KaKaoMap";
 import SideBar from "@/components/SideBar";
 import Popup from "@/components/PopUp";
@@ -16,7 +16,7 @@ export default function Main() {
     const [popupMode, setPopupMode] = useState<number>(0);
     const [isLoggedIn, setIsLoggedIn] = useState(false);
     const [accessToken, setAccessToken] = useState<string | null>(null);
-
+    
     const [RefreshToken] = useMutation(Refresh, {
         onCompleted: (data) => {
             if (data.refresh) {
@@ -35,13 +35,11 @@ export default function Main() {
 
     const { data: markingData, loading: markingsLoad, error: error1, refetch } = useQuery(GetAllMarkings, {
         context: {
-            headers: {
-                ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
-            },
+            headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : {}
         },
     });
-
-    const { data:Regions, loading, refetch:updateRegion } = useQuery(GetAllRegion);
+    
+    const { data: Regions, loading, refetch: updateRegion } = useQuery(GetAllRegion);
 
     const fetchMarkings = () => {
         refetch();
@@ -50,26 +48,23 @@ export default function Main() {
 
     useEffect(() => {
         fetchMarkings();
-      }, [fetchMarkings]);      
+    }, [accessToken]);
 
-    useEffect(() => {
+    const checkLoginStatus = useCallback(() => {
         const token = localStorage.getItem("accessToken");
         setAccessToken(token);
         setIsLoggedIn(!!token);
-
-        const checkLoginStatus = () => {
-            const token = localStorage.getItem("accessToken");
-            setAccessToken(token);
-            setIsLoggedIn(!!token);
-        };
-
-        window.addEventListener("storage", checkLoginStatus);
-        return () => window.removeEventListener("storage", checkLoginStatus);
     }, []);
 
     useEffect(() => {
+        checkLoginStatus();
+        window.addEventListener("storage", checkLoginStatus);
+        return () => window.removeEventListener("storage", checkLoginStatus);
+    }, [checkLoginStatus]);
+
+    useEffect(() => {
         const refreshTokenPeriodically = async () => {
-            const refreshToken = localStorage.getItem("refreshToken");
+            const refreshToken = "Bearer " + localStorage.getItem("refreshToken");
             const userId = localStorage.getItem("userId");
 
             if (!refreshToken || !userId) {
@@ -127,7 +122,7 @@ export default function Main() {
             </div>
         );
     }
-
+    
     return (
         <div>
             {popupMode === 1 && (

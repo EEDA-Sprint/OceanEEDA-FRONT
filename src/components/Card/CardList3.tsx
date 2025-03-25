@@ -1,7 +1,7 @@
 import styled from "styled-components";
 import Card from "./Card";
 import { FaMapMarkerAlt } from "react-icons/fa";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import RegionAdd from "../RegionAdd";
 
 
@@ -28,6 +28,10 @@ export default function CardList3({ cardData, setSelectedCard, fetchMarkings, re
     const handleClose = () => {
         setIsActive(false);
     };
+
+    useEffect(() => {
+        fetchMarkings();
+    }, []);
 
     return (
         <>

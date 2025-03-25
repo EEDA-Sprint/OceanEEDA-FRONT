@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import styled from "styled-components";
 import { Map, MapMarker } from "react-kakao-maps-sdk";
 import { useMutation } from "@apollo/client";
-import { MarkingUpdateWithDetails } from "../graphql/mutations";
+import { AddFiles, MarkingUpdateWithDetails } from "../graphql/mutations";
 
 interface ModifyProps {
     onClose: () => void;
@@ -13,7 +13,7 @@ interface ModifyProps {
         title: string;
         description: string;
         location: any;
-        files: File[];
+        files: Array<{ path: string }>;
         id: string;
     };
     fetchMarkings: () => void;
@@ -51,41 +51,17 @@ const Modify: React.FC<ModifyProps> = ({ onClose, initialData, fetchMarkings, re
     const [previewUrls, setPreviewUrls] = useState<PreviewUrls>({
         files: initialData.files.map((file: any) => ({
             url: `${process.env.NEXT_PUBLIC_GRAPHQL_URI}${file.path}`,
-            type: (file.path.endsWith(".png") || file.path.endsWith(".jpg") || file.path.endsWith(".jpeg"))
+            type: (file.path.toLowerCase().includes(".png") || file.path.toLowerCase().includes(".jpg") || file.path.toLowerCase().includes(".jpeg"))
                 ? "image"
                 : "video" as "image" | "video",
         })),
     });
-    const [updateMarking, { loading }] = useMutation(MarkingUpdateWithDetails);
+    const [updateMarking, { loading: load1 }] = useMutation(MarkingUpdateWithDetails);
+    const [uploadFiles, { loading: load2}] = useMutation(AddFiles);
 
-    const convertURLtoFile = async (url: string) => {
-        const response = await fetch(url);
-        const data = await response.blob();
-        const ext = url.split(".").pop();
-        const filename = url.split("/").pop();
-        const metadata = { type: `image/${ext}` };
-        return new File([data], filename!, metadata);
-    };
-
-    useEffect(() => {
-        const convertAllUrlsToFile = async () => {
-            if (newEntry.files.length > 0) return;
-
-            const files = await Promise.all(
-                previewUrls.files.map(async (file) => {
-                    const convertedFile = await convertURLtoFile(file.url);
-                    return convertedFile;
-                })
-            );
-
-            setNewEntry((prev) => ({
-                ...prev,
-                files: [...files],
-            }));
-        };
-
-        convertAllUrlsToFile();
-    }, [previewUrls.files]);
+    const Load = () => {
+        return load1 || load2
+    }
 
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
         const { name, value } = e.target;
@@ -121,6 +97,7 @@ const Modify: React.FC<ModifyProps> = ({ onClose, initialData, fetchMarkings, re
         }));
     };
 
+
     const handleMapClick = (_: kakao.maps.Map, mouseEvent: kakao.maps.event.MouseEvent) => {
         const clickLatLng = mouseEvent.latLng;
 
@@ -135,11 +112,28 @@ const Modify: React.FC<ModifyProps> = ({ onClose, initialData, fetchMarkings, re
             const token = localStorage.getItem('accessToken');
             if (!token) throw new Error("Authorization token not found");
 
-            const fileInputs = newEntry.files.map((file, index) => ({
-                name: `file_${index}`,
-                file: file,
-            }));
+            const files = newEntry.files
+            const result = await uploadFiles({
+                variables: {
+                    files: files
+                },
+                context: {
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                    },
+                },
+            });
+            const paths: string[] = [...(initialData.files as Array<{ path: string }>).map(file => file.path)];
+            if (result?.data?.uploadFile?.paths) {
+                paths.push(...result.data.uploadFile.paths);
+            }
 
+            const fileInputs = paths.map((path, index) => ({
+                name: `file_${index}`,
+                order: index+1,
+                path: path
+            }));
+            
             await updateMarking({
                 variables: {
                     id: newEntry.id,
@@ -169,8 +163,9 @@ const Modify: React.FC<ModifyProps> = ({ onClose, initialData, fetchMarkings, re
         }
     };
 
+    console.log(previewUrls.files)
     return (
-        <Overlay onClick={loading ? (e) => e.stopPropagation() : onClose}>
+        <Overlay onClick={Load() ? (e) => e.stopPropagation() : onClose}>
             <PopupContainer onClick={(e) => e.stopPropagation()}>
                 {step === 1 ? (
                     <>
@@ -266,7 +261,7 @@ const Modify: React.FC<ModifyProps> = ({ onClose, initialData, fetchMarkings, re
                                 center={newEntry.location}
                                 style={{ width: "100%", height: "100%" }}
                                 level={3}
-                                onClick={loading ? () => { } : handleMapClick}  // Disable map click when loading
+                                onClick={Load() ? () => { } : handleMapClick}
                             >
                                 <MapMarker
                                     position={newEntry.location}
@@ -279,8 +274,8 @@ const Modify: React.FC<ModifyProps> = ({ onClose, initialData, fetchMarkings, re
                             </Map>
                         </MapContainer>
                         <ButtonGroup>
-                            <Button onClick={() => setStep(2)} disabled={loading}>이전</Button>
-                            <Button onClick={handleSubmit} disabled={loading}>{loading ? "수정 중..." : "수정하기"}</Button>
+                            <Button onClick={() => setStep(2)} disabled={Load()}>이전</Button>
+                            <Button onClick={handleSubmit} disabled={Load()}>{Load() ? "수정 중..." : "수정하기"}</Button>
                         </ButtonGroup>
                     </>
                 )}

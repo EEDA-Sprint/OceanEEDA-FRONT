@@ -17,18 +17,26 @@ export const SIGNUP = gql`
   }
 `;
 
+export const AddFiles = gql`
+  mutation MyMutation($files: [Upload!]) {
+    uploadFile(input: {files: $files}) {
+      paths
+    }
+  }
+`
+
 export const MarkingAdd = gql`
   mutation MyMutation(
     $category: Category,
     $content: String,
-    $regionId: String!,
+    $regionId: ID!,
     $title: String,
     $trashTypes: [String!],
     $poster: String,
     $latitude: Float!,
     $longitude: Float!,
     $files: [FileInput!]!
-    $isApproved: Boolean
+    $isApproved: Boolean!
   ) {
     createMarking(
       input: {
@@ -57,7 +65,7 @@ export const MarkingUpdateWithDetails = gql`
     $latitude: Float!,
     $longitude: Float!,
     $poster: String,
-    $regionId: String,
+    $regionId: ID!,
     $title: String,
     $trashTypes: [String!]
     $isApproved: Boolean

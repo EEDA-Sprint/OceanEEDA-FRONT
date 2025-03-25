@@ -8,6 +8,7 @@ import CardList2 from "./Card/CardList2";
 import CardList3 from "./Card/CardList3";
 import Detail from "./Detail";
 import SlideShow from "./Slide";
+import { useState, useEffect } from "react";
 
 interface SideBarProps {
     data: any;
@@ -36,6 +37,26 @@ export default function SideBar({
     regions,
     updateRegion
 }: SideBarProps) {
+    const [searchQuery, setSearchQuery] = useState("");
+    const [filteredData, setFilteredData] = useState(data);
+
+    useEffect(() => {
+        if (searchQuery.trim() === "") {
+            setFilteredData(data);
+            return;
+        }
+
+        const filtered = data.filter((item: any) => {
+            const regionName = regions.getAllRegions.find((r: any) => r.id === item.regionId)?.name || "";
+            return regionName.toLowerCase().includes(searchQuery.toLowerCase());
+        });
+        setFilteredData(filtered);
+    }, [searchQuery, data, regions]);
+
+    const handleSearch = (query: string) => {
+        setSearchQuery(query);
+    };
+
     const handleItemClick = (index: number) => {
         if (activeOption === index) {
             setActiveOption(null);
@@ -90,7 +111,7 @@ export default function SideBar({
             {activeOption !== null && (
                 <DetailContainer>
                     <DetailHeader>
-                        <SearchBar />
+                        <SearchBar onSearch={handleSearch} />
                     </DetailHeader>
                     {selectedCard &&
                         <SlideShow selectedCard={selectedCard} setSelectedCard={setSelectedCard} />
@@ -103,12 +124,12 @@ export default function SideBar({
                                 <Detail selectedCard={selectedCard} regions={regions}/>
                             ) : (
                                 <>
-                                    {activeOption === 0 && <CardList1 cardData={data} setSelectedCard={setSelectedCard} isLoggedIn={isLoggedIn} fetchMarkings={fetchMarkings} regions={regions} />}
-                                    {activeOption === 1 && <CardList2 cardData={data} setSelectedCard={setSelectedCard} isLoggedIn={isLoggedIn} fetchMarkings={fetchMarkings} regions={regions}/>}
-                                    {activeOption === 2 && <CardList3 cardData={data} setSelectedCard={setSelectedCard} fetchMarkings={fetchMarkings} regions={regions} updateregion={updateRegion}/>}
+                                    {activeOption === 0 && <CardList1 cardData={filteredData} setSelectedCard={setSelectedCard} isLoggedIn={isLoggedIn} fetchMarkings={fetchMarkings} regions={regions} />}
+                                    {activeOption === 1 && <CardList2 cardData={filteredData} setSelectedCard={setSelectedCard} isLoggedIn={isLoggedIn} fetchMarkings={fetchMarkings} regions={regions}/>}
+                                    {activeOption === 2 && <CardList3 cardData={filteredData} setSelectedCard={setSelectedCard} fetchMarkings={fetchMarkings} regions={regions} updateregion={updateRegion}/>}
                                 </>
-                            )
-                            }</CardList>
+                            )}
+                        </CardList>
                     }
                 </DetailContainer>
             )}

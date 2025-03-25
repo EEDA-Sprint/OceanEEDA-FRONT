@@ -3,6 +3,7 @@ import styled from "styled-components";
 import { Map, MapMarker } from "react-kakao-maps-sdk";
 import { useMutation } from "@apollo/client";
 import { MarkingAdd } from "../graphql/mutations";
+import { AddFiles } from "../graphql/mutations";
 
 interface CreateProps {
     onClose: () => void;
@@ -41,8 +42,12 @@ const Create = ({ onClose, markerLocation, regions }: CreateProps) => {
         files: []
     });
 
-    const [uploadMarking, { loading }] = useMutation(MarkingAdd);
+    const [uploadMarking, { loading: load1 }] = useMutation(MarkingAdd);
+    const [uploadFiles, { loading: load2}] = useMutation(AddFiles);
 
+    const Load = () => {
+        return load1 || load2
+    }
 
     useEffect(() => {
         if (navigator.geolocation) {
@@ -129,9 +134,25 @@ const Create = ({ onClose, markerLocation, regions }: CreateProps) => {
                 .map(item => item.trim())
                 .filter(item => item !== '');
 
-            const fileInputs = newEntry.files.map((file, index) => ({
+            const files = newEntry.files
+            console.log(files);
+            const result = await uploadFiles({
+                variables: {
+                    files: files
+                },
+                context: {
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                    },
+                },
+            });
+            console.log(result.data.uploadFile.paths);
+            const paths: string[] = result.data.uploadFile.paths;
+
+            const fileInputs = paths.map((path, index) => ({
                 name: `file_${index}`,
-                file: file,
+                order: index+1,
+                path: path
             }));
 
             const latitude = newEntry.location.lat;
@@ -141,7 +162,7 @@ const Create = ({ onClose, markerLocation, regions }: CreateProps) => {
                 throw new Error("Invalid latitude or longitude");
             }
 
-            await uploadMarking({
+            const result2 = await uploadMarking({
                 variables: {
                     regionId: newEntry.region || '',
                     category: newEntry.type,
@@ -160,18 +181,18 @@ const Create = ({ onClose, markerLocation, regions }: CreateProps) => {
                     },
                 },
             });
-
+            console.log(result2);
             console.log("Upload successful");
             alert("업로드 성공!");
             onClose();
         } catch (err) {
             console.error("Error:", err instanceof Error ? err.message : err);
-            alert("등록 중 오류가 발생했습니다: " + (err instanceof Error ? err.message : "알 수 없는 오류"));
+            alert(err instanceof Error ? err.message : "알 수 없는 오류");
         }
     };
 
     return (
-        <Overlay onClick={loading ? (e) => e.stopPropagation() : onClose}>
+        <Overlay onClick={Load() ? (e) => e.stopPropagation() : onClose}>
             <PopupContainer onClick={(e) => e.stopPropagation()}>
                 {step === 1 ? (
                     <>
@@ -216,8 +237,8 @@ const Create = ({ onClose, markerLocation, regions }: CreateProps) => {
                             onChange={handleInputChange}
                         />
 
-                        <Button onClick={handleNext} disabled={loading}>
-                            {loading ? "로딩 중..." : "다음"}
+                        <Button onClick={handleNext} disabled={Load()}>
+                            {Load() ? "로딩 중..." : "다음"}
                         </Button>
                     </>
                 ) : step === 2 ? (
@@ -268,7 +289,7 @@ const Create = ({ onClose, markerLocation, regions }: CreateProps) => {
                                 center={newEntry.location}
                                 style={{ width: "100%", height: "100%" }}
                                 level={3}
-                                onClick={loading ? () => { } : handleMapClick}
+                                onClick={load1 ? () => { } : handleMapClick}
                             >
                                 <MapMarker
                                     position={newEntry.location}
@@ -284,9 +305,9 @@ const Create = ({ onClose, markerLocation, regions }: CreateProps) => {
                             선택된 위치: {newEntry.location.lat.toFixed(6)}, {newEntry.location.lng.toFixed(6)}
                         </LocationText>
                         <ButtonGroup>
-                            <Button onClick={() => setStep(2)} disabled={loading}>이전</Button>
-                            <Button onClick={handleSubmit} disabled={loading}>
-                                {loading ? "등록 중..." : "등록하기"}
+                            <Button onClick={() => setStep(2)} disabled={Load()}>이전</Button>
+                            <Button onClick={handleSubmit} disabled={Load()}>
+                                {Load() ? "등록 중..." : "등록하기"}
                             </Button>
                         </ButtonGroup>
                     </>
