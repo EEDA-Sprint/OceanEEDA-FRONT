@@ -135,7 +135,6 @@ const Create = ({ onClose, markerLocation, regions }: CreateProps) => {
                 .filter(item => item !== '');
 
             const files = newEntry.files
-            console.log(files);
             const result = await uploadFiles({
                 variables: {
                     files: files
@@ -146,7 +145,6 @@ const Create = ({ onClose, markerLocation, regions }: CreateProps) => {
                     },
                 },
             });
-            console.log(result.data.uploadFile.paths);
             const paths: string[] = result.data.uploadFile.paths;
 
             const fileInputs = paths.map((path, index) => ({
@@ -181,8 +179,6 @@ const Create = ({ onClose, markerLocation, regions }: CreateProps) => {
                     },
                 },
             });
-            console.log(result2);
-            console.log("Upload successful");
             alert("업로드 성공!");
             onClose();
         } catch (err) {

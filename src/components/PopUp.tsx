@@ -4,10 +4,10 @@ import { useMutation, useLazyQuery } from "@apollo/client";
 import { SIGNIN, SIGNUP } from "../graphql/mutations";
 import { GetMyRole } from "@/graphql/query";
 
-const Popup = ({ mode, onClose, setIsLoggedIn, fetchMarkings }: { 
-  mode: number, 
-  onClose: () => void, 
-  setIsLoggedIn: (status: boolean) => void 
+const Popup = ({ mode, onClose, setIsLoggedIn, fetchMarkings }: {
+  mode: number,
+  onClose: () => void,
+  setIsLoggedIn: (status: boolean) => void
   fetchMarkings: any
 }) => {
   const [isLogin, setIsLogin] = useState(mode === 1);
@@ -17,7 +17,7 @@ const Popup = ({ mode, onClose, setIsLoggedIn, fetchMarkings }: {
   const [username, setUsername] = useState("");
   const [passwordError, setPasswordError] = useState("");
   const [loading, setLoading] = useState(false);
-  
+
   const [signin] = useMutation(SIGNIN);
   const [signup] = useMutation(SIGNUP);
   const [getMyRole] = useLazyQuery(GetMyRole);
@@ -50,11 +50,11 @@ const Popup = ({ mode, onClose, setIsLoggedIn, fetchMarkings }: {
 
       const accessToken = loginData.login.accessToken;
       const refreshToken = loginData.login.refreshToken;
-      
+
       if (accessToken && refreshToken) {
         localStorage.setItem("accessToken", accessToken);
         localStorage.setItem("refreshToken", refreshToken);
-        
+
         const { data: roleData } = await getMyRole({
           context: {
             headers: {
@@ -67,13 +67,13 @@ const Popup = ({ mode, onClose, setIsLoggedIn, fetchMarkings }: {
           const userName = roleData.getUserByCurrent.username || "Unknown User";
           const userRole = roleData.getUserByCurrent.role || "USER";
           const userId = roleData.getUserByCurrent.id;
-          
+
           localStorage.setItem("userName", userName);
           localStorage.setItem("userRole", userRole);
           localStorage.setItem("userId", userId);
           setIsLoggedIn(true);
           setTimeout(() => {
-            onClose();            
+            onClose();
             fetchMarkings();
             window.location.reload();
           }, 100);
@@ -105,7 +105,7 @@ const Popup = ({ mode, onClose, setIsLoggedIn, fetchMarkings }: {
       const { data } = await signup({
         variables: { username, email, password },
       });
-      
+
       if (data?.createUser?.id) {
         alert("회원가입이 완료되었습니다. 로그인해주세요.");
         setIsLogin(true);

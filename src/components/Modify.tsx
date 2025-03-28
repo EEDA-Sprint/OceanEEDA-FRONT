@@ -153,7 +153,6 @@ const Modify: React.FC<ModifyProps> = ({ onClose, initialData, fetchMarkings, re
                     },
                 },
             });
-            console.log("Update successful");
             alert("수정 성공!");
             fetchMarkings();
             onClose();
