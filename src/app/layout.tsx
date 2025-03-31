@@ -3,6 +3,8 @@ import localFont from "next/font/local";
 import "./globals.css";
 import StyledComponentsRegistry from "./registry";
 import { ApolloWrapper } from './apollo-provider';
+import Script from 'next/script';
+import GoogleAnalytics from "@/components/GoogleAnalytics";
 
 const geistSans = localFont({
   src: "./fonts/GeistVF.woff",
@@ -27,10 +29,12 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="ko" suppressHydrationWarning>
+      <head>
+        <GoogleAnalytics />
+      </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-
         <StyledComponentsRegistry>
           <ApolloWrapper>
             <script

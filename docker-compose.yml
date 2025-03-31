@@ -1,0 +1,12 @@
+version: '3.8'
+
+services:
+  frontend:
+    image: kdaon07/oceaneeda-front:latest
+    ports:
+      - "3000:3000"
+    environment:
+      - NEXT_PUBLIC_GRAPHQL_URI=http://211.210.61.46:9090/
+    # 또는 .env 파일을 사용하는 경우:
+    # env_file:
+    #   - .env.local 

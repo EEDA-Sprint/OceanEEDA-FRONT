@@ -5,7 +5,7 @@ const nextConfig = {
 
   // Image Optimization 설정
   images: {
-    domains: ["example.com", "another-domain.com"], // 외부 이미지 도메인 허용
+    domains: ["example.com", "another-domain.com", "localhost"], // 외부 이미지 도메인 허용
     formats: ["image/webp"], // 지원할 이미지 포맷
   },
 
@@ -34,6 +34,8 @@ const nextConfig = {
       },
     ];
   },
+
+  output: 'standalone',
 };
 
 module.exports = nextConfig;

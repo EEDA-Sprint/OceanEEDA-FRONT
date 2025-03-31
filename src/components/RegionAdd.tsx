@@ -1,8 +1,9 @@
-import { AddRegion, deleteRegion } from "@/graphql/mutations";
-import { GetAllRegion } from "@/graphql/query";
-import { useMutation, useQuery } from "@apollo/client";
 import React, { useState } from "react";
 import styled from "styled-components";
+import { useMutation } from "@apollo/client";
+import { AddRegion, deleteRegion } from "@/graphql/mutations";
+import { GetAllRegion } from "@/graphql/query";
+import { useQuery } from "@apollo/client";
 
 const RegionAdd = ({ onClose, regions, updateregion }: {
     onClose: () => void;
@@ -10,7 +11,7 @@ const RegionAdd = ({ onClose, regions, updateregion }: {
     updateregion: any;
 }) => {
     const [name, setName] = useState("");
-    const [uploadRegion, { loading: loading1 }] = useMutation(AddRegion);
+    const [addRegion, { loading: loading1 }] = useMutation(AddRegion);
     const [removeRegion, { loading: loading2 }] = useMutation(deleteRegion);
 
     const load = () => loading1 || loading2;
@@ -18,7 +19,7 @@ const RegionAdd = ({ onClose, regions, updateregion }: {
     const handleAddRegion = async () => {
         if (name.trim() === "") return;
         try {
-            await uploadRegion({
+            await addRegion({
                 variables: { name },
                 context: {
                     headers: {

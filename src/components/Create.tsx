@@ -160,7 +160,7 @@ const Create = ({ onClose, markerLocation, regions }: CreateProps) => {
                 throw new Error("Invalid latitude or longitude");
             }
 
-            const result2 = await uploadMarking({
+            await uploadMarking({
                 variables: {
                     regionId: newEntry.region || '',
                     category: newEntry.type,
