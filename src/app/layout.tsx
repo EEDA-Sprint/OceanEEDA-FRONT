@@ -39,7 +39,7 @@ export default function RootLayout({
           <ApolloWrapper>
             <script
               type="text/javascript"
-              src="//dapi.kakao.com/v2/maps/sdk.js?appkey=57d67c04c0c42fe3e94137d69aa1d714&libraries=services,clusterer&autoload=false"
+              src="//dapi.kakao.com/v2/maps/sdk.js?appkey=5eb91c9feb87abb460ea680d55a7d2b9&libraries=services,clusterer&autoload=false"
               defer
             ></script>
             {children}
