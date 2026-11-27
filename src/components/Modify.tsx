@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { fileUrl } from "@/utils/fileUrl";
 import styled from "styled-components";
 import { Map, MapMarker } from "react-kakao-maps-sdk";
 import { useMutation } from "@apollo/client";
@@ -50,7 +51,7 @@ const Modify: React.FC<ModifyProps> = ({ onClose, initialData, fetchMarkings, re
     });
     const [previewUrls, setPreviewUrls] = useState<PreviewUrls>({
         files: initialData.files.map((file: any) => ({
-            url: `${process.env.NEXT_PUBLIC_GRAPHQL_URI}${file.path}`,
+            url: fileUrl(file.path),
             type: (file.path.toLowerCase().includes(".png") || file.path.toLowerCase().includes(".jpg") || file.path.toLowerCase().includes(".jpeg"))
                 ? "image"
                 : "video" as "image" | "video",

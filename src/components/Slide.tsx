@@ -1,4 +1,5 @@
 import React from 'react';
+import { fileUrl } from "@/utils/fileUrl";
 import Slider from 'react-slick';
 import { FaAngleLeft } from 'react-icons/fa';
 import styled from 'styled-components';
@@ -23,10 +24,10 @@ const SlideShow = ({ selectedCard, setSelectedCard }: { selectedCard: any, setSe
                     <Slide key={index}>
                         {file.path.toLowerCase().endsWith('.mp4') ? (
                             <Video controls autoPlay muted>
-                                <source src={`${process.env.NEXT_PUBLIC_GRAPHQL_URI}${file.path}`} type="video/mp4" />
+                                <source src={fileUrl(file.path)} type="video/mp4" />
                             </Video>
                         ) : (
-                            <Img src={`${process.env.NEXT_PUBLIC_GRAPHQL_URI}${file.path}`} alt={`Slide ${index}`} />
+                            <Img src={fileUrl(file.path)} alt={`Slide ${index}`} />
                         )}
                     </Slide>
                 ))}

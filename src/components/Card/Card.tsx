@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { fileUrl } from "@/utils/fileUrl";
 import styled from 'styled-components';
 import { AiOutlineMore } from "react-icons/ai";
 import { useMutation } from "@apollo/client";
@@ -27,7 +28,7 @@ interface CardProps {
 
 const Card: React.FC<CardProps> = ({ data, role, onClick, fetchMarkings, regions }) => {
   const imageFile: any = data.files.find((file: any) => file.path.match(/\.(jpeg|jpg|png|gif)$/i));
-  const imageUrl = imageFile ? `${process.env.NEXT_PUBLIC_GRAPHQL_URI}${imageFile.path}` : undefined;
+  const imageUrl = imageFile ? fileUrl(imageFile.path) : undefined;
   const [toggle, setToggle] = useState(false);
   const popupRef = useRef<HTMLDivElement>(null);
   const [isModifyOpen, setModifyOpen] = useState(false);
